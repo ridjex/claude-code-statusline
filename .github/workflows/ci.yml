@@ -54,14 +54,6 @@ jobs:
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
 
-      - name: Lint statusline.sh
-        run: shellcheck -S warning src/statusline.sh || true
-
-      - name: Lint cumulative-stats.sh
-        run: shellcheck -S warning src/cumulative-stats.sh || true
-
-      - name: Lint install.sh
-        run: shellcheck -S warning install.sh || true
-
-      - name: Lint test runner
-        run: shellcheck -S warning tests/run-tests.sh || true
+      - name: Lint all scripts (advisory)
+        run: |
+          shellcheck -S warning src/statusline.sh src/cumulative-stats.sh install.sh tests/run-tests.sh scripts/generate-demo.sh || true

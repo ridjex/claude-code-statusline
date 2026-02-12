@@ -8,26 +8,51 @@
   <img alt="Status line demo" src="assets/demo-dark.svg" width="820">
 </picture>
 
+> Demo images are auto-generated from test fixtures. Run `make demo` to regenerate after changing output format.
+
 ## Install
 
+**Prerequisites** (macOS):
+
 ```bash
+brew install jq       # bc and git are pre-installed on macOS
+```
+
+**Setup**:
+
+```bash
+git clone https://github.com/ridjex/claude-statusline.git
+cd claude-statusline
 ./install.sh
+```
+
+Then activate the status line in Claude Code:
+
+```bash
 claude config set --global statusline "~/.claude/statusline.sh"
 ```
 
-Requires: `jq`, `bc`, `git`
+That's it. Open a new Claude Code session and you'll see the status line.
+
+## Uninstall
+
+```bash
+rm ~/.claude/statusline.sh ~/.claude/cumulative-stats.sh
+rm -rf ~/.cache/claude-code-statusline
+claude config set --global statusline ""
+```
 
 ## Test
 
 ```bash
-./tests/run-tests.sh      # 50 assertions
-./tests/run-tests.sh -v   # verbose — shows rendered output
+make test             # 54 assertions
+make test-verbose     # shows rendered output for each scenario
 ```
 
 ## Line 1
 
 ```
-Opus 4.6 █▅· │ ▓▓▓░░░░░░░ 38% │ $8.4 │ 15m │ ✦edit-link ● │ +127 -34
+Opus 4.6 █▅▃ │ ▓▓▓░░░░░░░ 38% │ $8.4 │ 15m │ ✦edit-link ● │ +127 -34
 \_model_/ ^^^   \__context__/     cost   dur   \___git___/     \_diff_/
           │││
           │││  Mini bars — model mix by output tokens
@@ -39,7 +64,7 @@ Opus 4.6 █▅· │ ▓▓▓░░░░░░░ 38% │ $8.4 │ 15m │ �
 | Segment | Example | Description |
 |---------|---------|-------------|
 | Model | `Opus 4.6` | Active model, `Claude ` prefix stripped |
-| Mini bars | `█▅·` | Bar height = relative output tokens. `·` = not used |
+| Mini bars | `█▅▃` | Bar height = relative output tokens. `·` = not used |
 | Context | `▓▓▓░░░░░░░ 38%` | 10-char bar. Yellow `⚠` at 70%, red `⚠` at 90% |
 | Cost | `$8.4` | Session cost. `$12.0k` for >= $1000 |
 | Duration | `15m` | Wall clock. `4h0m` for >= 60min |
@@ -51,15 +76,15 @@ Branch icons: `★` feature, `✦` fix, `⚙` chore, `↻` refactor, `§` docs
 ## Line 2
 
 ```
-O:549k/41k S:1.6k/184 │ 223 tok/s │ ⌂ $374/$4.0k/$7.1k │ Σ $552/$4.7k/$12.0k
-\___per-model tokens__/   speed       \__this project__/     \___all projects__/
-                                       day / week / month     day / week / month
+O:549k/41k S:180k/25k H:45k/15k │ 69 tok/s │ ⌂ $374/$4.0k/$7.1k │ Σ $552/$4.7k/$12.0k
+\______per-model tokens________/   speed      \__this project__/     \___all projects__/
+                                                day / week / month     day / week / month
 ```
 
 | Segment | Example | Description |
 |---------|---------|-------------|
-| Tokens | `O:549k/41k S:1.6k/184` | Per-model in/out. Only used models shown |
-| Speed | `223 tok/s` | Output throughput. Green >30, yellow 15-30, red <15 |
+| Tokens | `O:549k/41k S:180k/25k` | Per-model in/out. Only used models shown |
+| Speed | `69 tok/s` | Output throughput. Green >30, yellow 15-30, red <15 |
 | `⌂` | `$374/$4.0k/$7.1k` | This project: day/week/month cost |
 | `Σ` | `$552/$4.7k/$12.0k` | All projects: day/week/month cost |
 
@@ -124,20 +149,18 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
 ```
 claude-statusline/
   install.sh               # installer with dependency check + backup
+  Makefile                 # make test / make demo / make install
   README.md
   src/
-    statusline.sh           # main renderer (373 lines)
-    cumulative-stats.sh     # background cost aggregator (274 lines)
+    statusline.sh           # main renderer
+    cumulative-stats.sh     # background cost aggregator
   tests/
-    run-tests.sh            # test runner (50 assertions)
-    fixtures/
-      basic-session.json    # standard session
-      high-context.json     # 78% context (yellow warning)
-      critical-context.json # 92% context (red warning)
-      cheap-session.json    # $0.03 session
-      expensive-session.json# $1.8k session
-      minimal.json          # zero tokens, zero cost
-      cumulative-proj.json  # project cost cache mock
-      cumulative-all.json   # all-projects cost cache mock
-      models-cache.json     # per-model token cache mock
+    run-tests.sh            # test runner (54 assertions)
+    fixtures/               # mock JSON data for all scenarios
+  scripts/
+    generate-demo.sh        # runs statusline.sh with fixtures → ANSI
+    ansi2svg.py             # converts ANSI output → SVG (dark + light)
+  assets/
+    demo-dark.svg           # auto-generated, verified in CI
+    demo-light.svg          # auto-generated, verified in CI
 ```

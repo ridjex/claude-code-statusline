@@ -241,8 +241,10 @@ assert_contains "sonnet token label" "$OUT_MODELS" "S:"
 assert_contains "haiku token label" "$OUT_MODELS" "H:"
 assert_contains "opus in tokens" "$OUT_MODELS" "549k"
 assert_contains "opus out tokens" "$OUT_MODELS" "41k"
-assert_contains "sonnet in tokens" "$OUT_MODELS" "1.6k"
-assert_contains "haiku in tokens" "$OUT_MODELS" "116k"
+assert_contains "sonnet in tokens" "$OUT_MODELS" "180k"
+assert_contains "sonnet out tokens" "$OUT_MODELS" "25k"
+assert_contains "haiku in tokens" "$OUT_MODELS" "45k"
+assert_contains "haiku out tokens" "$OUT_MODELS" "15k"
 
 # ============================================================
 echo "=== Spacing consistency ==="

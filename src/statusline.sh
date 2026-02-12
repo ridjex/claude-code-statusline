@@ -2,8 +2,12 @@
 # Claude Code Status Line (2-line)
 # Reads JSON session data from stdin, outputs formatted status line
 #
-# Line 1: model │ context bar │ cost │ duration │ git branch (ahead/behind/stash) │ lines
-# Line 2: tokens │ speed │ proj cumulative │ all cumulative
+# NOTE: No 'set -e' — must never crash Claude Code's render cycle.
+# Errors in individual sections are silently ignored; partial output is
+# preferable to no output at all.
+#
+# Line 1: model │ context bar │ cost │ duration │ git branch │ lines
+# Line 2: per-model tokens │ speed │ proj cumulative │ all cumulative
 
 input=$(cat)
 
@@ -241,8 +245,9 @@ if [ -f "$ALL_CACHE" ]; then
 fi
 
 # --- Kick off cumulative stats refresh in background ---
-if [ -n "$PROJECT_DIR" ]; then
-  "$HOME/.claude/cumulative-stats.sh" "$PROJECT_DIR" &>/dev/null &
+_SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -n "$PROJECT_DIR" ] && [ -x "$_SELF_DIR/cumulative-stats.sh" ]; then
+  "$_SELF_DIR/cumulative-stats.sh" "$PROJECT_DIR" &>/dev/null &
   disown 2>/dev/null
 fi
 

@@ -11,3 +11,8 @@
 # Test artifacts
 /tmp/
 *.bak
+*.tmp
+
+# Cache (local dev)
+.cache/
+.claude/
