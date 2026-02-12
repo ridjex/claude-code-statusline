@@ -29,6 +29,20 @@ jobs:
       - name: Run tests (verbose)
         run: ./tests/run-tests.sh -v
 
+  demo-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y jq bc
+
+      - name: Regenerate demo SVGs
+        run: ./scripts/generate-demo.sh
+
+      - name: Verify SVGs are up to date
+        run: git diff --exit-code assets/
+
   shellcheck:
     runs-on: ubuntu-latest
     steps:
