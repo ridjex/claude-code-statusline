@@ -1,0 +1,16 @@
+{
+  "model": { "display_name": "Claude Sonnet 4.5" },
+  "context_window": {
+    "used_percentage": 92,
+    "total_input_tokens": 700000,
+    "total_output_tokens": 72000
+  },
+  "cost": {
+    "total_cost_usd": 22.5,
+    "total_duration_ms": 2880000,
+    "total_api_duration_ms": 1800000,
+    "total_lines_added": 412,
+    "total_lines_removed": 88
+  },
+  "workspace": { "project_dir": "/tmp/statusline-test-project" }
+}

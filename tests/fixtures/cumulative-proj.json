@@ -1,0 +1,8 @@
+{
+  "updated": "2026-02-12T10:00:00",
+  "project_dir": "/tmp/statusline-test-project",
+  "matched_dirs": 2,
+  "d1": { "cost": 374, "calls": 42 },
+  "d7": { "cost": 3964, "calls": 280 },
+  "d30": { "cost": 7144, "calls": 1120 }
+}

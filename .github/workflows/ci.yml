@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y jq bc
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install jq
+
+      - name: Run tests
+        run: ./tests/run-tests.sh
+
+      - name: Run tests (verbose)
+        run: ./tests/run-tests.sh -v
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Lint statusline.sh
+        run: shellcheck -S warning src/statusline.sh || true
+
+      - name: Lint cumulative-stats.sh
+        run: shellcheck -S warning src/cumulative-stats.sh || true
+
+      - name: Lint install.sh
+        run: shellcheck -S warning install.sh || true
+
+      - name: Lint test runner
+        run: shellcheck -S warning tests/run-tests.sh || true

@@ -1,0 +1,7 @@
+{
+  "models": [
+    { "model": "claude-opus-4-6-20250514", "in": 549000, "out": 41200 },
+    { "model": "claude-sonnet-4-5-20250929", "in": 1600, "out": 184 },
+    { "model": "claude-haiku-4-5-20251001", "in": 116000, "out": 22 }
+  ]
+}
