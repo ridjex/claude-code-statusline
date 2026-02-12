@@ -15,6 +15,7 @@ VERBOSE=false
 
 # Isolated test cache
 TEST_CACHE=$(mktemp -d)
+mkdir -p "$TEST_CACHE/claude-code-statusline"
 TEST_PROJ="/tmp/statusline-test-project"
 trap 'rm -rf "$TEST_CACHE"' EXIT
 
@@ -186,7 +187,6 @@ echo "=== Cumulative stats ==="
 # Install mock caches
 cp "$FIXTURES/cumulative-proj.json" "$TEST_CACHE/claude-code-statusline/proj-${_HASH}.json"
 cp "$FIXTURES/cumulative-all.json" "$TEST_CACHE/claude-code-statusline/all.json"
-mkdir -p "$TEST_CACHE/claude-code-statusline"
 
 OUT_CUM=$(render basic-session.json)
 $VERBOSE && echo "$OUT_CUM" && echo ""
