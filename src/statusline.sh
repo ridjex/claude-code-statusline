@@ -31,8 +31,8 @@ FILLED=$((PCT / 10))
 [ "$FILLED" -gt 10 ] && FILLED=10
 EMPTY=$((10 - FILLED))
 BAR=""
-[ "$FILLED" -gt 0 ] && BAR=$(printf "%${FILLED}s" | tr ' ' '▓')
-[ "$EMPTY" -gt 0 ] && BAR="${BAR}$(printf "%${EMPTY}s" | tr ' ' '░')"
+[ "$FILLED" -gt 0 ] && BAR=$(printf "%${FILLED}s" | sed 's/ /▓/g')
+[ "$EMPTY" -gt 0 ] && BAR="${BAR}$(printf "%${EMPTY}s" | sed 's/ /░/g')"
 WARN=""
 if [ "$PCT" -ge 90 ]; then
   CLR="\033[31m"
