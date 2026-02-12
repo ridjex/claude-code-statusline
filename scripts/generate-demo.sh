@@ -25,6 +25,13 @@ else
   _HASH=$(printf '%s' "$_SLUG" | md5sum | cut -c1-8)
 fi
 
+# Deterministic git context: temp repo with a fixed branch name
+MOCK_REPO="$TMPDIR_ALL/repo"
+git init -q "$MOCK_REPO"
+git -C "$MOCK_REPO" checkout -q -b fix/auth-session
+# Stage a file so "dirty" indicator shows
+printf 'x' > "$MOCK_REPO/wip.txt"
+
 # --- Scene 1: Full session with model cache + cumulative ---
 FAKE_SID="demo-session-001"
 cp "$FIXTURES/models-cache.json" "$CACHE/claude-code-statusline/models-${FAKE_SID}.json"
@@ -32,14 +39,14 @@ cp "$FIXTURES/cumulative-proj.json" "$CACHE/claude-code-statusline/proj-${_HASH}
 cp "$FIXTURES/cumulative-all.json" "$CACHE/claude-code-statusline/all.json"
 
 jq --arg tp "/tmp/${FAKE_SID}.jsonl" '. + {transcript_path: $tp}' \
-  "$FIXTURES/basic-session.json" | XDG_CACHE_HOME="$CACHE" "$SL" > "$SCENES/1.txt" 2>/dev/null
+  "$FIXTURES/basic-session.json" | (cd "$MOCK_REPO" && XDG_CACHE_HOME="$CACHE" "$SL") > "$SCENES/1.txt" 2>/dev/null
 
 # --- Scene 2: High context warning (78%) ---
 rm -f "$CACHE/claude-code-statusline/models-"*.json
-XDG_CACHE_HOME="$CACHE" "$SL" < "$FIXTURES/high-context.json" > "$SCENES/2.txt" 2>/dev/null
+(cd "$MOCK_REPO" && XDG_CACHE_HOME="$CACHE" "$SL") < "$FIXTURES/high-context.json" > "$SCENES/2.txt" 2>/dev/null
 
 # --- Scene 3: Critical context (92%) ---
-XDG_CACHE_HOME="$CACHE" "$SL" < "$FIXTURES/critical-context.json" > "$SCENES/3.txt" 2>/dev/null
+(cd "$MOCK_REPO" && XDG_CACHE_HOME="$CACHE" "$SL") < "$FIXTURES/critical-context.json" > "$SCENES/3.txt" 2>/dev/null
 
 # --- Generate SVGs ---
 python3 "$SCRIPT_DIR/ansi2svg.py" \
