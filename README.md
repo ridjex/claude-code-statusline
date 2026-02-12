@@ -14,41 +14,41 @@
 
 ## Install
 
-**Prerequisites** (macOS):
-
 ```bash
-brew install jq       # bc and git are pre-installed on macOS
-```
+brew install jq                    # bc and git are pre-installed on macOS
 
-**Setup**:
-
-```bash
 git clone https://github.com/ridjex/claude-code-statusline.git
 cd claude-code-statusline
-./install.sh
+make install                       # checks deps, copies scripts to ~/.claude/
 ```
 
-Then activate the status line in Claude Code:
+Then activate in Claude Code:
 
 ```bash
 claude config set --global statusline "~/.claude/statusline.sh"
 ```
 
-That's it. Open a new Claude Code session and you'll see the status line.
+Verify it works (run inside any git repo):
+
+```bash
+make verify
+```
 
 ## Uninstall
 
 ```bash
-rm ~/.claude/statusline.sh ~/.claude/cumulative-stats.sh
-rm -rf ~/.cache/claude-code-statusline
+make uninstall
 claude config set --global statusline ""
 ```
 
-## Test
+## Development
 
 ```bash
+make                  # show all targets
 make test             # 54 assertions
 make test-verbose     # shows rendered output for each scenario
+make demo             # regenerate demo SVGs
+make check            # verify dependencies
 ```
 
 ## Line 1
@@ -150,9 +150,8 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
 
 ```
 claude-code-statusline/
-  install.sh               # installer with dependency check + backup
-  Makefile                 # make test / make demo / make install
-  README.md
+  Makefile                 # all commands: make help
+  install.sh               # installer (called by make install)
   src/
     statusline.sh           # main renderer
     cumulative-stats.sh     # background cost aggregator
