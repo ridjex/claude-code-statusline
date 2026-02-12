@@ -52,13 +52,20 @@ SCENE3=$(render critical-context.json)
 # Clean up cumulative zero-value caches that background jobs may have created
 rm -f "$CACHE/claude-code-statusline/proj-"*.json "$CACHE/claude-code-statusline/all.json"
 
-# --- Generate SVG via Python ---
+# --- Write scenes to temp files (avoids shell→Python unicode issues) ---
+SCENES_DIR=$(mktemp -d)
+echo "$SCENE1" > "$SCENES_DIR/1.txt"
+echo "$SCENE2" > "$SCENES_DIR/2.txt"
+echo "$SCENE3" > "$SCENES_DIR/3.txt"
+
 python3 "$SCRIPT_DIR/ansi2svg.py" \
-  --scene "Full session" "$SCENE1" \
-  --scene "Context warning (78%)" "$SCENE2" \
-  --scene "Critical context (92%)" "$SCENE3" \
+  --scene "Full session" "$SCENES_DIR/1.txt" \
+  --scene "Context warning (78%)" "$SCENES_DIR/2.txt" \
+  --scene "Critical context (92%)" "$SCENES_DIR/3.txt" \
   --dark "$OUT_DARK" \
   --light "$OUT_LIGHT"
+
+rm -rf "$SCENES_DIR"
 
 echo "Generated:"
 echo "  $OUT_DARK"

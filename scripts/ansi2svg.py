@@ -214,7 +214,9 @@ def main():
     while i < len(args):
         if args[i] == "--scene":
             label = args[i + 1]
-            output = args[i + 2]
+            filepath = args[i + 2]
+            with open(filepath, "r", encoding="utf-8") as f:
+                output = f.read()
             scenes.append((label, output))
             i += 3
         elif args[i] == "--dark":
@@ -227,7 +229,7 @@ def main():
             i += 1
 
     if not scenes:
-        print("Usage: ansi2svg.py --scene LABEL OUTPUT [--scene ...] --dark FILE --light FILE", file=sys.stderr)
+        print("Usage: ansi2svg.py --scene LABEL FILE [--scene ...] --dark FILE --light FILE", file=sys.stderr)
         sys.exit(1)
 
     if dark_path:
