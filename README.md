@@ -2,10 +2,11 @@
 
 2-line terminal status bar for Claude Code sessions.
 
-```
-Opus 4.6 █▅· │ ▓▓▓░░░░░░░ 38% │ $8.4 │ 15m │ ✦edit-link │ +127 -34
-O:549k/41k S:1.6k/184 H:116k/22 │ 223 tok/s │ ⌂ $374/$4.0k/$7.1k │ Σ $552/$4.7k/$12.0k
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/demo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/demo-light.svg">
+  <img alt="Status line demo" src="assets/demo-dark.svg" width="820">
+</picture>
 
 ## Install
 
