@@ -10,62 +10,44 @@ FIXTURES="$ROOT/tests/fixtures"
 OUT_DARK="$ROOT/assets/demo-dark.svg"
 OUT_LIGHT="$ROOT/assets/demo-light.svg"
 
-# Isolated cache
-CACHE=$(mktemp -d)
-mkdir -p "$CACHE/claude-code-statusline"
-trap 'rm -rf "$CACHE"' EXIT
+# Isolated cache + scene output dir
+TMPDIR_ALL=$(mktemp -d)
+CACHE="$TMPDIR_ALL/cache"
+SCENES="$TMPDIR_ALL/scenes"
+mkdir -p "$CACHE/claude-code-statusline" "$SCENES"
+trap 'rm -rf "$TMPDIR_ALL"' EXIT
 
 # Project hash for /tmp/statusline-test-project
-_SLUG=$(echo "/tmp/statusline-test-project" | sed 's|^/||; s|/|-|g')
+_SLUG=$(printf '%s' "/tmp/statusline-test-project" | sed 's|^/||; s|/|-|g')
 if command -v md5 &>/dev/null; then
-  _HASH=$(echo "$_SLUG" | md5 -q | cut -c1-8)
+  _HASH=$(printf '%s' "$_SLUG" | md5 -q | cut -c1-8)
 else
-  _HASH=$(echo "$_SLUG" | md5sum | cut -c1-8)
+  _HASH=$(printf '%s' "$_SLUG" | md5sum | cut -c1-8)
 fi
 
-render() {
-  local fixture="$1" extra_setup="${2:-}"
-  [ -n "$extra_setup" ] && eval "$extra_setup"
-  XDG_CACHE_HOME="$CACHE" "$SL" < "$FIXTURES/$fixture" 2>/dev/null
-}
-
-# --- Render scenarios ---
-
-# 1. Full session with model cache + cumulative
+# --- Scene 1: Full session with model cache + cumulative ---
 FAKE_SID="demo-session-001"
 cp "$FIXTURES/models-cache.json" "$CACHE/claude-code-statusline/models-${FAKE_SID}.json"
 cp "$FIXTURES/cumulative-proj.json" "$CACHE/claude-code-statusline/proj-${_HASH}.json"
 cp "$FIXTURES/cumulative-all.json" "$CACHE/claude-code-statusline/all.json"
 
-TMPFIX=$(mktemp)
-jq --arg tp "/tmp/${FAKE_SID}.jsonl" '. + {transcript_path: $tp}' "$FIXTURES/basic-session.json" > "$TMPFIX"
-SCENE1=$(XDG_CACHE_HOME="$CACHE" "$SL" < "$TMPFIX" 2>/dev/null)
-rm -f "$TMPFIX"
+jq --arg tp "/tmp/${FAKE_SID}.jsonl" '. + {transcript_path: $tp}' \
+  "$FIXTURES/basic-session.json" | XDG_CACHE_HOME="$CACHE" "$SL" > "$SCENES/1.txt" 2>/dev/null
 
-# 2. High context warning (78%) — single model
+# --- Scene 2: High context warning (78%) ---
 rm -f "$CACHE/claude-code-statusline/models-"*.json
-SCENE2=$(render high-context.json)
+XDG_CACHE_HOME="$CACHE" "$SL" < "$FIXTURES/high-context.json" > "$SCENES/2.txt" 2>/dev/null
 
-# 3. Critical context (92%) — different model
-SCENE3=$(render critical-context.json)
+# --- Scene 3: Critical context (92%) ---
+XDG_CACHE_HOME="$CACHE" "$SL" < "$FIXTURES/critical-context.json" > "$SCENES/3.txt" 2>/dev/null
 
-# Clean up cumulative zero-value caches that background jobs may have created
-rm -f "$CACHE/claude-code-statusline/proj-"*.json "$CACHE/claude-code-statusline/all.json"
-
-# --- Write scenes to temp files (avoids shell→Python unicode issues) ---
-SCENES_DIR=$(mktemp -d)
-echo "$SCENE1" > "$SCENES_DIR/1.txt"
-echo "$SCENE2" > "$SCENES_DIR/2.txt"
-echo "$SCENE3" > "$SCENES_DIR/3.txt"
-
+# --- Generate SVGs ---
 python3 "$SCRIPT_DIR/ansi2svg.py" \
-  --scene "Full session" "$SCENES_DIR/1.txt" \
-  --scene "Context warning (78%)" "$SCENES_DIR/2.txt" \
-  --scene "Critical context (92%)" "$SCENES_DIR/3.txt" \
+  --scene "Full session" "$SCENES/1.txt" \
+  --scene "Context warning (78%)" "$SCENES/2.txt" \
+  --scene "Critical context (92%)" "$SCENES/3.txt" \
   --dark "$OUT_DARK" \
   --light "$OUT_LIGHT"
-
-rm -rf "$SCENES_DIR"
 
 echo "Generated:"
 echo "  $OUT_DARK"
