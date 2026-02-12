@@ -1,6 +1,6 @@
 #!/bin/bash
-# Claude Code Status Line (2-line)
-# Reads JSON session data from stdin, outputs formatted status line
+# Claude Code Status Line
+# Reads JSON session data from stdin, outputs formatted status bar
 #
 # NOTE: No 'set -e' — must never crash Claude Code's render cycle.
 # Errors in individual sections are silently ignored; partial output is

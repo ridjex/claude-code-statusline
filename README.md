@@ -2,12 +2,12 @@
 
 [![CI](https://github.com/ridjex/claude-code-statusline/actions/workflows/ci.yml/badge.svg)](https://github.com/ridjex/claude-code-statusline/actions/workflows/ci.yml)
 
-2-line terminal status bar for Claude Code sessions.
+Rich terminal status bar for Claude Code sessions — model usage, context window, costs, git state, and cumulative spend tracking.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/demo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="assets/demo-light.svg">
-  <img alt="Status line demo" src="assets/demo-dark.svg" width="820">
+  <img alt="Claude Code Status Line demo" src="assets/demo-dark.svg" width="820">
 </picture>
 
 > Demo images are auto-generated from test fixtures. Run `make demo` to regenerate after changing output format.
