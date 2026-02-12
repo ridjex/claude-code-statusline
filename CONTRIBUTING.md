@@ -3,8 +3,8 @@
 ## Setup
 
 ```bash
-git clone https://github.com/ridjex/claude-statusline.git
-cd claude-statusline
+git clone https://github.com/ridjex/claude-code-statusline.git
+cd claude-code-statusline
 ```
 
 ## Testing

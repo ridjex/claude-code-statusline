@@ -1,5 +1,7 @@
 # Claude Code Status Line
 
+[![CI](https://github.com/ridjex/claude-code-statusline/actions/workflows/ci.yml/badge.svg)](https://github.com/ridjex/claude-code-statusline/actions/workflows/ci.yml)
+
 2-line terminal status bar for Claude Code sessions.
 
 <picture>
@@ -21,8 +23,8 @@ brew install jq       # bc and git are pre-installed on macOS
 **Setup**:
 
 ```bash
-git clone https://github.com/ridjex/claude-statusline.git
-cd claude-statusline
+git clone https://github.com/ridjex/claude-code-statusline.git
+cd claude-code-statusline
 ./install.sh
 ```
 
@@ -147,7 +149,7 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
 ## Project structure
 
 ```
-claude-statusline/
+claude-code-statusline/
   install.sh               # installer with dependency check + backup
   Makefile                 # make test / make demo / make install
   README.md
