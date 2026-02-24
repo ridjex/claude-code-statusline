@@ -32,9 +32,24 @@ if [ -n "${NO_COLOR:-}" ] || [ -n "${STATUSLINE_NO_COLOR:-}" ]; then
   _NO_COLOR=true
 fi
 
-# --- User config (all default to true) ---
+# --- User config (all default to true, env vars take precedence) ---
 _SL_CFG="${HOME}/.claude/statusline.env"
-[ -f "$_SL_CFG" ] && . "$_SL_CFG"
+if [ -f "$_SL_CFG" ]; then
+  # Save explicit env overrides before sourcing config file
+  _sl_pre=""
+  for _v in STATUSLINE_SHOW_MODEL STATUSLINE_SHOW_MODEL_BARS STATUSLINE_SHOW_CONTEXT \
+            STATUSLINE_SHOW_COST STATUSLINE_SHOW_DURATION STATUSLINE_SHOW_GIT \
+            STATUSLINE_SHOW_DIFF STATUSLINE_LINE2 STATUSLINE_SHOW_TOKENS \
+            STATUSLINE_SHOW_SPEED STATUSLINE_SHOW_CUMULATIVE STATUSLINE_NO_COLOR; do
+    eval "_val=\${${_v}:-}"
+    [ -n "$_val" ] && _sl_pre="$_sl_pre ${_v}=$_val"
+  done
+  . "$_SL_CFG"
+  # Restore env overrides so they win over config file
+  for _pair in $_sl_pre; do
+    eval "$_pair"
+  done
+fi
 _show() { [ "${1:-true}" != "false" ]; }
 # Shortcuts: _show "$STATUSLINE_SHOW_X" && <build section>
 
@@ -359,7 +374,14 @@ S="${DIM}│${RST}"
 # --- Line 1 (append non-empty sections with separator) ---
 _parts=()
 [ -n "$MODEL" ] && _parts+=("\033[36m${MODEL}${RST}")
-[ -n "$MODEL_MIX" ] && { [ ${#_parts[@]} -gt 0 ] && _parts[-1]="${_parts[-1]} ${MODEL_MIX}" || _parts+=("${MODEL_MIX}"); }
+if [ -n "$MODEL_MIX" ]; then
+  if [ ${#_parts[@]} -gt 0 ]; then
+    _last=$((${#_parts[@]}-1))
+    _parts[$_last]="${_parts[$_last]} ${MODEL_MIX}"
+  else
+    _parts+=("${MODEL_MIX}")
+  fi
+fi
 [ -n "$BAR" ] && _parts+=("${CLR}${BAR} ${PCT}%${WARN}${RST}")
 [ -n "$COST_FMT" ] && _parts+=("${COST_FMT}")
 [ -n "$DUR_FMT" ] && _parts+=("${DUR_FMT}")
