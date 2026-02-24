@@ -7,7 +7,8 @@ metadata:
 
 # Claude Code Status Line Manager
 
-Lightweight, zero-dep status bar for Claude Code (pure bash, jq/bc/git only).
+Multi-engine status bar for Claude Code. Ships with bash and python engines.
+The installer auto-detects the best available engine (python > bash).
 
 ## Quick Reference
 

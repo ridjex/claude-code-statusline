@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  test-bash:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -26,11 +26,35 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install jq
 
-      - name: Run tests
+      - name: Run bash tests
         run: ./tests/run-tests.sh
 
-      - name: Run tests (verbose)
+      - name: Run bash tests (verbose)
         run: ./tests/run-tests.sh -v
+
+  test-python:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y jq bc
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install jq
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run engine-agnostic tests (Python)
+        run: ./tests/test-engine.sh "python3 engines/python/statusline.py"
 
   demo-update:
     if: github.event_name == 'pull_request'
@@ -89,4 +113,13 @@ jobs:
 
       - name: Lint all scripts (advisory)
         run: |
-          shellcheck -S warning src/statusline.sh src/cumulative-stats.sh install.sh tests/run-tests.sh scripts/generate-demo.sh || true
+          shellcheck -S warning \
+            engines/bash/statusline.sh \
+            engines/bash/cumulative-stats.sh \
+            install.sh \
+            tests/run-tests.sh \
+            tests/test-engine.sh \
+            scripts/generate-demo.sh \
+            benchmarks/bench.sh \
+            benchmarks/profile-bash.sh \
+            || true
