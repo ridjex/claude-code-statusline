@@ -36,14 +36,35 @@ Then open a new Claude Code session.
 make uninstall                     # removes scripts, caches, and settings.json entry
 ```
 
+## Configuration
+
+Edit `~/.claude/statusline.env` to toggle sections (created by `make install`):
+
+```bash
+STATUSLINE_SHOW_MODEL=true        # Model name
+STATUSLINE_SHOW_MODEL_BARS=true   # Mini bars (█▅▃)
+STATUSLINE_SHOW_CONTEXT=true      # Context window bar
+STATUSLINE_SHOW_COST=true         # Session cost
+STATUSLINE_SHOW_DURATION=true     # Wall clock time
+STATUSLINE_SHOW_GIT=true          # Branch + dirty
+STATUSLINE_SHOW_DIFF=true         # Lines +/-
+STATUSLINE_LINE2=true             # Show Line 2
+STATUSLINE_SHOW_TOKENS=true       # Token counts
+STATUSLINE_SHOW_SPEED=true        # tok/s throughput
+STATUSLINE_SHOW_CUMULATIVE=true   # ⌂/Σ cost tracking
+```
+
+Set any value to `false` to hide that section. Changes apply on next render (no restart needed).
+
 ## Development
 
 ```bash
 make                  # show all targets
-make test             # 54 assertions
+make test             # run test suite
 make test-verbose     # shows rendered output for each scenario
 make demo             # regenerate demo SVGs
 make check            # verify dependencies
+make diagnose         # check installation health
 ```
 
 ## Line 1
@@ -154,18 +175,22 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
 
 ```
 claude-code-statusline/
-  Makefile                 # all commands: make help
-  install.sh               # installer (called by make install)
+  CLAUDE.md                 # project knowledge for Claude Code
+  Makefile                  # all commands: make help
+  install.sh                # idempotent installer
   src/
-    statusline.sh           # main renderer
-    cumulative-stats.sh     # background cost aggregator
+    statusline.sh            # main renderer
+    cumulative-stats.sh      # background cost aggregator
+    statusline.env.default   # default config template
+  skill/
+    SKILL.md                 # Claude Code /statusline skill
   tests/
-    run-tests.sh            # test runner (54 assertions)
-    fixtures/               # mock JSON data for all scenarios
+    run-tests.sh             # test runner
+    fixtures/                # mock JSON data for all scenarios
   scripts/
-    generate-demo.sh        # runs statusline.sh with fixtures → ANSI
-    ansi2svg.py             # converts ANSI output → SVG (dark + light)
+    generate-demo.sh         # runs statusline.sh with fixtures → ANSI
+    ansi2svg.py              # converts ANSI output → SVG (dark + light)
   assets/
-    demo-dark.svg           # auto-generated, verified in CI
-    demo-light.svg          # auto-generated, verified in CI
+    demo-dark.svg            # auto-generated, verified in CI
+    demo-light.svg           # auto-generated, verified in CI
 ```

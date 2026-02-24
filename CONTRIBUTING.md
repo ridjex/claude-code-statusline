@@ -32,8 +32,18 @@ Tests use mock JSON fixtures in `tests/fixtures/`. No external services or Claud
 3. Run `make demo` — regenerate demo SVGs
 4. CI verifies SVGs are up to date (`demo-freshness` job)
 
+## Adding a config option
+
+1. Add `STATUSLINE_SHOW_X=true` to `src/statusline.env.default`
+2. Wrap section in `if _show "${STATUSLINE_SHOW_X:-}"; then ... fi`
+3. Add test: `STATUSLINE_SHOW_X=false render basic-session.json`
+4. Update `skill/SKILL.md` config table
+5. Update `README.md` Configuration section
+
 ## Code style
 
 - Shell scripts follow POSIX-compatible bash
 - No external dependencies beyond `jq`, `bc`, `git`
 - Keep render path fast (< 10ms) — expensive work goes in background jobs
+- Config via env vars sourced from `~/.claude/statusline.env`
+- No `set -e` in statusline.sh — must never crash Claude Code
