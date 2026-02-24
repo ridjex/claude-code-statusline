@@ -19,7 +19,7 @@ brew install jq                    # bc and git are pre-installed on macOS
 
 git clone https://github.com/ridjex/claude-code-statusline.git
 cd claude-code-statusline
-make install                       # auto-detects best engine (python > bash)
+make install                       # auto-detects best engine (go > python > bash)
 ```
 
 Verify it works (run inside any git repo):
@@ -42,9 +42,9 @@ The statusline ships with multiple engine implementations. The installer auto-de
 
 | Engine | Status | Subprocesses | Render time | Requirements |
 |--------|--------|-------------|-------------|--------------|
+| **Go** | Stable | 0 (hot path) | ~11ms | go 1.23+ (compiled binary) |
 | **Python** | Stable | 5-8 (git only) | 5-15ms | python3 (stdlib only) |
 | **Bash** | Stable | 27-35 (jq+bc+git) | 30-100ms | jq, bc, git |
-| Go | Planned | 0 | ~1-3ms | — |
 | Rust | Planned | 0 | <1ms | — |
 
 All engines produce **identical output** for the same input. The engine-agnostic test suite verifies this.
