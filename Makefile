@@ -10,10 +10,12 @@ uninstall: ## Remove status line and caches
 	@echo "Removing status line..."
 	@rm -f ~/.claude/statusline.sh ~/.claude/cumulative-stats.sh
 	@rm -rf "$${XDG_CACHE_HOME:-$$HOME/.cache}/claude-code-statusline"
-	@echo "[ok] Files removed"
-	@echo ""
-	@echo "Deactivate in Claude Code:"
-	@echo "  claude config set --global statusline \"\""
+	@if [ -f ~/.claude/settings.json ] && command -v jq >/dev/null 2>&1; then \
+	  jq 'del(.statusLine)' ~/.claude/settings.json > ~/.claude/settings.json.tmp \
+	    && mv ~/.claude/settings.json.tmp ~/.claude/settings.json; \
+	  echo "[ok] Removed statusLine from settings.json"; \
+	fi
+	@echo "[ok] Uninstalled"
 
 test: ## Run test suite (54 assertions)
 	@./tests/run-tests.sh
@@ -40,7 +42,7 @@ verify: ## Smoke test installed statusline (run in a git repo)
 	@if [ ! -x ~/.claude/statusline.sh ]; then \
 	  echo "Not installed. Run: make install"; exit 1; \
 	fi
-	@echo '{"model":{"display_name":"Claude Opus 4.6"},"context_window":{"used_percentage":42,"total_input_tokens":5000,"total_output_tokens":1200},"cost":{"total_cost_usd":1.5,"total_duration_ms":120000,"total_api_duration_ms":80000},"workspace":{}}' \
+	@echo '{"model":{"id":"claude-opus-4-6","display_name":"Claude Opus 4.6"},"cwd":"/tmp","context_window":{"used_percentage":42,"context_window_size":200000,"total_input_tokens":5000,"total_output_tokens":1200},"cost":{"total_cost_usd":1.5,"total_duration_ms":120000,"total_api_duration_ms":80000},"workspace":{"project_dir":"/tmp","current_dir":"/tmp"}}' \
 	  | ~/.claude/statusline.sh
 	@echo ""
 	@echo "[ok] Status line is working"

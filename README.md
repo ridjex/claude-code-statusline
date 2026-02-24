@@ -19,13 +19,7 @@ brew install jq                    # bc and git are pre-installed on macOS
 
 git clone https://github.com/ridjex/claude-code-statusline.git
 cd claude-code-statusline
-make install                       # checks deps, copies scripts to ~/.claude/
-```
-
-Then activate in Claude Code:
-
-```bash
-claude config set --global statusline "~/.claude/statusline.sh"
+make install                       # installs scripts + configures settings.json
 ```
 
 Verify it works (run inside any git repo):
@@ -34,11 +28,12 @@ Verify it works (run inside any git repo):
 make verify
 ```
 
+Then open a new Claude Code session.
+
 ## Uninstall
 
 ```bash
-make uninstall
-claude config set --global statusline ""
+make uninstall                     # removes scripts, caches, and settings.json entry
 ```
 
 ## Development
@@ -145,6 +140,15 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
 - **macOS vs Linux** — uses `md5`/`stat -f` on macOS, `md5sum`/`stat -c` on Linux.
 - **Branch truncation** — names > 20 chars truncated with `…`.
 - **Worktree** — `⊕` prefix when working inside a git worktree.
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| Statusline blank | Set `export NO_COLOR=1` in your shell profile — works around a known Claude Code ANSI rendering bug |
+| Renders vertically | Widen terminal to > 120 columns; known Claude Code bug with narrow terminals ([#27849](https://github.com/anthropics/claude-code/issues/27849)) |
+| Not showing after install | Restart Claude Code session; verify with `make verify` |
+| Missing colors | Ensure terminal supports 256 colors (`echo $TERM` should show `xterm-256color` or similar) |
 
 ## Project structure
 
