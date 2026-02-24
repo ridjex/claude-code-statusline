@@ -54,6 +54,29 @@ Removes scripts, caches, statusline.env, and the `statusLine` key from settings.
 
 ## Configure Sections
 
+### Option A: CLI Arguments (highest priority)
+
+Pass `--no-<section>` flags directly to statusline.sh:
+
+```bash
+~/.claude/statusline.sh --no-git --no-cumulative
+```
+
+Embed in `~/.claude/settings.json` for persistent use:
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh --no-git --no-cumulative",
+    "padding": 0
+  }
+}
+```
+
+Run `~/.claude/statusline.sh --help` for all options.
+
+### Option B: Config File
+
 Edit `~/.claude/statusline.env`. Set any value to `false` to hide that section:
 
 ```bash
@@ -73,9 +96,18 @@ STATUSLINE_SHOW_SPEED=true        # Output throughput (tok/s)
 STATUSLINE_SHOW_CUMULATIVE=true   # Project + all cost (⌂ Σ)
 ```
 
+Config precedence: **CLI args > env vars > config file > defaults (all on)**
+
 Changes take effect on the next Claude Code render cycle (no restart needed).
 
 ### Common presets
+
+**Via CLI args (in settings.json command):**
+- Minimal: `~/.claude/statusline.sh --no-model --no-model-bars --no-context --no-duration --no-git --no-diff --no-line2`
+- No cumulative: `~/.claude/statusline.sh --no-cumulative`
+- Single line: `~/.claude/statusline.sh --no-line2`
+
+**Via config file:**
 
 **Minimal (cost-only):**
 ```bash

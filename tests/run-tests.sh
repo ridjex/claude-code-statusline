@@ -313,6 +313,49 @@ rm -f "$TEST_CACHE/claude-code-statusline/proj-${_HASH}.json"
 rm -f "$TEST_CACHE/claude-code-statusline/all.json"
 
 # ============================================================
+echo "=== CLI arguments ==="
+# ============================================================
+
+# Test --no-cost
+OUT_ARG=$(XDG_CACHE_HOME="$TEST_CACHE" "$SL" --no-cost < "$FIXTURES/basic-session.json" 2>/dev/null)
+assert_not_contains "arg --no-cost" "$OUT_ARG" '$8.4'
+assert_contains "arg --no-cost still has model" "$OUT_ARG" "Opus 4.6"
+
+# Test --no-git
+OUT_ARG2=$(XDG_CACHE_HOME="$TEST_CACHE" "$SL" --no-git < "$FIXTURES/basic-session.json" 2>/dev/null)
+assert_not_contains "arg --no-git" "$OUT_ARG2" "main"
+
+# Test --no-line2
+OUT_ARG3=$(XDG_CACHE_HOME="$TEST_CACHE" "$SL" --no-line2 < "$FIXTURES/basic-session.json" 2>/dev/null)
+assert_not_contains "arg --no-line2" "$OUT_ARG3" "tok/s"
+
+# Test multiple args
+OUT_MULTI=$(XDG_CACHE_HOME="$TEST_CACHE" "$SL" --no-cost --no-git --no-diff < "$FIXTURES/basic-session.json" 2>/dev/null)
+assert_not_contains "multi --no-cost" "$OUT_MULTI" '$8.4'
+assert_not_contains "multi --no-git" "$OUT_MULTI" "main"
+assert_not_contains "multi --no-diff" "$OUT_MULTI" "+127"
+assert_contains "multi still has model" "$OUT_MULTI" "Opus 4.6"
+
+# Test --no-color
+OUT_ARGNC=$(XDG_CACHE_HOME="$TEST_CACHE" "$SL" --no-color < "$FIXTURES/basic-session.json" 2>/dev/null)
+if echo "$OUT_ARGNC" | grep -q $'\x1b\['; then
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: --no-color still has ANSI"
+else
+  PASS=$((PASS + 1))
+fi
+
+# Test --help (should print to stderr and exit 0)
+HELP_OUT=$("$SL" --help 2>&1 >/dev/null </dev/null)
+HELP_RC=$?
+if [ "$HELP_RC" -eq 0 ] && echo "$HELP_OUT" | grep -q "Usage:"; then
+  PASS=$((PASS + 1))
+else
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: --help did not print usage to stderr or exited non-zero"
+fi
+
+# ============================================================
 echo "=== NO_COLOR mode ==="
 # ============================================================
 

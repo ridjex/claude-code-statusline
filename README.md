@@ -56,6 +56,29 @@ STATUSLINE_SHOW_CUMULATIVE=true   # ⌂/Σ cost tracking
 
 Set any value to `false` to hide that section. Changes apply on next render (no restart needed).
 
+### CLI Arguments
+
+Pass `--no-<section>` flags to hide sections:
+
+```bash
+~/.claude/statusline.sh --no-git --no-cumulative
+```
+
+To use with Claude Code, edit `~/.claude/settings.json`:
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh --no-git --no-cumulative",
+    "padding": 0
+  }
+}
+```
+
+Run `~/.claude/statusline.sh --help` for all options.
+
+Config precedence: **CLI args > env vars > `~/.claude/statusline.env` > defaults (all on)**
+
 ## Development
 
 ```bash

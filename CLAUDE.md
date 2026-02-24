@@ -49,6 +49,10 @@ make check          # verify dependencies
 
 ## Config system
 
+**Precedence**: CLI args > env vars > `~/.claude/statusline.env` > defaults (all on)
+
+CLI flags (`--no-model`, `--no-git`, etc.) can be passed directly to statusline.sh and override all other config sources. See `statusline.sh --help`.
+
 `~/.claude/statusline.env` is sourced at the top of statusline.sh. Variables:
 
 ```bash

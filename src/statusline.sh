@@ -9,6 +9,49 @@
 # Line 1: model │ context bar │ cost │ duration │ git branch │ lines
 # Line 2: per-model tokens │ speed │ proj cumulative │ all cumulative
 
+# --- CLI arguments (highest priority) ---
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --no-model)       STATUSLINE_SHOW_MODEL=false ;;
+    --no-model-bars)  STATUSLINE_SHOW_MODEL_BARS=false ;;
+    --no-context)     STATUSLINE_SHOW_CONTEXT=false ;;
+    --no-cost)        STATUSLINE_SHOW_COST=false ;;
+    --no-duration)    STATUSLINE_SHOW_DURATION=false ;;
+    --no-git)         STATUSLINE_SHOW_GIT=false ;;
+    --no-diff)        STATUSLINE_SHOW_DIFF=false ;;
+    --no-line2)       STATUSLINE_LINE2=false ;;
+    --no-tokens)      STATUSLINE_SHOW_TOKENS=false ;;
+    --no-speed)       STATUSLINE_SHOW_SPEED=false ;;
+    --no-cumulative)  STATUSLINE_SHOW_CUMULATIVE=false ;;
+    --no-color)       STATUSLINE_NO_COLOR=true ;;
+    --help)
+      cat >&2 <<'USAGE'
+Usage: statusline.sh [OPTIONS]
+Reads JSON from stdin, outputs formatted status bar.
+
+Options:
+  --no-model       Hide model name
+  --no-model-bars  Hide model mix bars
+  --no-context     Hide context window bar
+  --no-cost        Hide session cost
+  --no-duration    Hide duration
+  --no-git         Hide git branch/status
+  --no-diff        Hide lines added/removed
+  --no-line2       Hide entire second line
+  --no-tokens      Hide token counts
+  --no-speed       Hide throughput (tok/s)
+  --no-cumulative  Hide cumulative costs
+  --no-color       Disable ANSI colors
+  --help           Show this help
+
+Config precedence: CLI args > env vars > ~/.claude/statusline.env > defaults (all on)
+USAGE
+      exit 0
+      ;;
+  esac
+  shift
+done
+
 input=$(cat)
 
 # --- Session transcript (for per-model stats) ---
