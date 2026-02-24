@@ -1,6 +1,7 @@
 #!/bin/bash
 # Claude Code Status Line — Installer
 # Idempotent: safe to run on fresh install, upgrade, or to fix broken config.
+# Auto-detects the best available engine (python > bash).
 
 set -euo pipefail
 
@@ -30,22 +31,73 @@ echo "[ok] Dependencies: jq, bc, git"
 mkdir -p "$DEST_DIR" "$CACHE_DIR"
 echo "[ok] Directories ready"
 
-# Backup and copy scripts (upgrade-safe)
-for f in statusline.sh cumulative-stats.sh; do
+# --- Engine detection ---
+detect_engine() {
+  # Future: check for compiled binaries first
+  # if [ -f "$SCRIPT_DIR/engines/rust/target/release/statusline" ]; then
+  #   echo "rust"; return
+  # fi
+  if [ -f "$SCRIPT_DIR/engines/go/statusline" ]; then
+    echo "go"; return
+  fi
+  if [ -f "$SCRIPT_DIR/engines/python/statusline.py" ] && command -v python3 &>/dev/null; then
+    echo "python"; return
+  fi
+  echo "bash"
+}
+
+ENGINE=$(detect_engine)
+echo "[ok] Selected engine: $ENGINE"
+
+# Backup existing scripts (upgrade-safe)
+for f in statusline.sh statusline.py cumulative-stats.sh; do
   if [ -f "$DEST_DIR/$f" ]; then
     cp "$DEST_DIR/$f" "$DEST_DIR/$f.bak"
   fi
 done
 
-cp "$SCRIPT_DIR/src/statusline.sh" "$DEST_DIR/statusline.sh"
-cp "$SCRIPT_DIR/src/cumulative-stats.sh" "$DEST_DIR/cumulative-stats.sh"
-chmod +x "$DEST_DIR/statusline.sh" "$DEST_DIR/cumulative-stats.sh"
-echo "[ok] Scripts installed"
+# --- Install engine ---
+case "$ENGINE" in
+  go)
+    cp "$SCRIPT_DIR/engines/go/statusline" "$DEST_DIR/statusline-go"
+    chmod +x "$DEST_DIR/statusline-go"
+    # Wrapper so settings.json command stays the same (~/.claude/statusline.sh)
+    cat > "$DEST_DIR/statusline.sh" <<'WRAPPER'
+#!/bin/bash
+exec ~/.claude/statusline-go "$@"
+WRAPPER
+    chmod +x "$DEST_DIR/statusline.sh"
+    # cumulative-stats.sh still needed (called by go engine for background jobs)
+    cp "$SCRIPT_DIR/engines/bash/cumulative-stats.sh" "$DEST_DIR/cumulative-stats.sh"
+    chmod +x "$DEST_DIR/cumulative-stats.sh"
+    echo "[ok] Go engine installed (with bash wrapper)"
+    ;;
+  python)
+    cp "$SCRIPT_DIR/engines/python/statusline.py" "$DEST_DIR/statusline.py"
+    chmod +x "$DEST_DIR/statusline.py"
+    # Wrapper so settings.json command stays the same (~/.claude/statusline.sh)
+    cat > "$DEST_DIR/statusline.sh" <<'WRAPPER'
+#!/bin/bash
+exec python3 ~/.claude/statusline.py "$@"
+WRAPPER
+    chmod +x "$DEST_DIR/statusline.sh"
+    # cumulative-stats.sh still needed (called by python engine for background jobs)
+    cp "$SCRIPT_DIR/engines/bash/cumulative-stats.sh" "$DEST_DIR/cumulative-stats.sh"
+    chmod +x "$DEST_DIR/cumulative-stats.sh"
+    echo "[ok] Python engine installed (with bash wrapper)"
+    ;;
+  bash)
+    cp "$SCRIPT_DIR/engines/bash/statusline.sh" "$DEST_DIR/statusline.sh"
+    cp "$SCRIPT_DIR/engines/bash/cumulative-stats.sh" "$DEST_DIR/cumulative-stats.sh"
+    chmod +x "$DEST_DIR/statusline.sh" "$DEST_DIR/cumulative-stats.sh"
+    echo "[ok] Bash engine installed"
+    ;;
+esac
 
 # Copy default config (only if user doesn't have one)
 SL_ENV="$DEST_DIR/statusline.env"
 if [ ! -f "$SL_ENV" ]; then
-  cp "$SCRIPT_DIR/src/statusline.env.default" "$SL_ENV"
+  cp "$SCRIPT_DIR/engines/bash/statusline.env.default" "$SL_ENV"
   echo "[ok] Created $SL_ENV (edit to customize sections)"
 else
   echo "[ok] Existing $SL_ENV preserved"

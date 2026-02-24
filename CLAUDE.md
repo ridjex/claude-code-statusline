@@ -2,36 +2,62 @@
 
 ## Project overview
 
-Pure-bash status bar for Claude Code. Zero external dependencies beyond jq, bc, git.
-Our differentiator vs competitors (ccstatusline, CCometixLine): no npm, no Rust, no Python — just bash.
+Multi-engine status bar for Claude Code. Ships with **bash** (v1), **python** (v2), and **go** (v3) engines.
+Rust engine is planned. The installer auto-detects the best available engine (go > python > bash).
+
+Zero external dependencies beyond jq, bc, git (bash engine), python3 (python engine), or a single compiled binary (go engine).
 
 ## Architecture
 
 ```
-stdin JSON → statusline.sh → 1-2 lines stdout
+stdin JSON → engine → 1-2 lines stdout
                ├── sources statusline.env (config)
                ├── reads JSON caches (model stats, cumulative costs)
                ├── reads git state
                └── spawns background jobs (model parse, cost scan)
+
+engines/
+  bash/     ← v1: 27-35 subprocesses (jq + bc + git)
+  python/   ← v2: 5-8 subprocesses (git only, native JSON/math)
+  go/       ← v3: single binary, go-git (pure Go), ~8-11ms renders
+  rust/     ← v4: planned (maximum performance)
 ```
 
 ## Key files
 
 | File | Purpose |
 |------|---------|
-| `src/statusline.sh` | Main renderer (~400 lines). Reads JSON from stdin, outputs formatted lines. |
-| `src/cumulative-stats.sh` | Background cost aggregator. Parses JSONL transcripts, caches per-project costs. |
-| `src/statusline.env.default` | Default config template. Copied to `~/.claude/statusline.env` on install. |
-| `install.sh` | Idempotent installer. Handles fresh/upgrade/repair scenarios. |
+| `engines/bash/statusline.sh` | Bash renderer (~490 LOC). 15+ jq calls per render. |
+| `engines/bash/cumulative-stats.sh` | Background cost aggregator. Parses JSONL transcripts. |
+| `engines/bash/statusline.env.default` | Default config template. |
+| `engines/python/statusline.py` | Python renderer (~250 LOC). Single JSON parse. |
+| `engines/python/pyproject.toml` | Python project metadata (stdlib only). |
+| `engines/go/cmd/statusline/main.go` | Go entry point + CLI orchestration. |
+| `engines/go/internal/render/render.go` | Go ANSI line assembly. |
+| `engines/go/internal/gitstate/gitstate.go` | Pure Go git via go-git (zero subprocess). |
+| `install.sh` | Stack-agnostic installer. Auto-detects best engine. |
 | `skill/SKILL.md` | Claude Code skill for `/statusline` command. |
-| `tests/run-tests.sh` | Test runner. All assertions use `assert_contains` pattern. |
-| `tests/fixtures/` | Mock JSON payloads for each test scenario. |
+| `tests/run-tests.sh` | Bash-specific test runner (80 assertions). |
+| `tests/test-engine.sh` | Engine-agnostic test runner (69 assertions). |
+| `tests/fixtures/` | Shared mock JSON payloads for all engines. |
+| `benchmarks/bench.sh` | Hyperfine-based engine comparison. |
+| `benchmarks/profile-bash.sh` | Detailed bash subprocess profiling. |
+| `src/` | Symlinks → `engines/bash/` (backward compatibility). |
 
 ## Development
 
 ```bash
-make test           # run all tests
+make test           # run bash engine tests (80 assertions)
+make test-python    # run engine-agnostic tests against Python
+make test-go        # build + run engine-agnostic tests against Go
+make test-all       # run all three
 make test-verbose   # show rendered output
+make build-go       # build Go binary (engines/go/statusline)
+make bench          # benchmark all available engines
+make bench-bash     # benchmark bash only
+make bench-python   # benchmark python only
+make bench-go       # benchmark Go only
+make profile        # detailed bash subprocess profiling
 make verify         # smoke test installed version
 make diagnose       # check installation health
 make demo           # regenerate SVG demos
@@ -46,14 +72,15 @@ make check          # verify dependencies
 - **Sub-5ms render** — all heavy work in background jobs, hot path reads caches only
 - **Backward compatible** — new config options default to enabled
 - **Config via env vars** — sourced from `~/.claude/statusline.env`, all optional
+- **Output parity** — all engines must produce byte-identical ANSI output for same input
 
 ## Config system
 
 **Precedence**: CLI args > env vars > `~/.claude/statusline.env` > defaults (all on)
 
-CLI flags (`--no-model`, `--no-git`, etc.) can be passed directly to statusline.sh and override all other config sources. See `statusline.sh --help`.
+CLI flags (`--no-model`, `--no-git`, etc.) work identically in all engines.
 
-`~/.claude/statusline.env` is sourced at the top of statusline.sh. Variables:
+`~/.claude/statusline.env` variables:
 
 ```bash
 STATUSLINE_SHOW_MODEL=true|false
@@ -69,24 +96,23 @@ STATUSLINE_SHOW_SPEED=true|false
 STATUSLINE_SHOW_CUMULATIVE=true|false
 ```
 
-Helper function: `_show() { [ "${1:-true}" != "false" ]; }`
-
 ## Adding a new section
 
-1. Add the data extraction inside a `_show` guard
-2. Add the variable to assembly block (Line 1 `_parts` array or Line 2 append)
-3. Add default to `src/statusline.env.default`
-4. Add test assertions in `tests/run-tests.sh`
+1. Add the data extraction in `engines/bash/statusline.sh`, `engines/python/statusline.py`, and `engines/go/internal/render/render.go`
+2. Add the variable to assembly block (Line 1 parts array or Line 2 append)
+3. Add default to `engines/bash/statusline.env.default`
+4. Add test assertions in `tests/run-tests.sh` and `tests/test-engine.sh`
 5. Update `skill/SKILL.md` config table
+6. Verify output parity: `make test-all`
 
 ## Testing
 
-- Use `render <fixture>` to run statusline.sh with test data
+- `tests/run-tests.sh` — bash-specific tests (includes spacing, git-specific assertions)
+- `tests/test-engine.sh <cmd>` — engine-agnostic tests (works with any engine)
+- Use `render <fixture>` to run an engine with test data
 - `assert_contains "label" "$OUT" "pattern"` — check output contains text
-- `assert_not_contains` — check output does NOT contain text
-- `strip_ansi` removes ANSI codes for comparison
-- Fixtures in `tests/fixtures/` — add new ones for new scenarios
-- Test config toggles by setting env vars: `STATUSLINE_SHOW_X=false render ...`
+- Fixtures in `tests/fixtures/` — shared across all engines
+- Test config toggles: `STATUSLINE_SHOW_X=false render ...`
 
 ## settings.json format
 
@@ -103,3 +129,4 @@ The correct format in `~/.claude/settings.json`:
 ```
 
 **Never** set it as a plain string — that's the old bug format.
+`~/.claude/statusline.sh` is always the entry point regardless of engine. For Python/Go, it's a thin wrapper.
