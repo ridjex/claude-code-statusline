@@ -1,0 +1,7 @@
+[project]
+name = "claude-code-statusline"
+version = "2.0.0"
+description = "Status bar for Claude Code (Python engine)"
+requires-python = ">=3.8"
+license = "MIT"
+# NO dependencies — stdlib only

@@ -1,0 +1,1 @@
+../engines/bash/statusline.sh
