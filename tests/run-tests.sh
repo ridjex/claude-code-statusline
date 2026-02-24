@@ -270,6 +270,34 @@ else
 fi
 
 # ============================================================
+echo "=== NO_COLOR mode ==="
+# ============================================================
+
+OUT_NC=$(NO_COLOR=1 render basic-session.json)
+$VERBOSE && echo "$OUT_NC" && echo ""
+
+# Should contain no ANSI escape codes
+if echo "$OUT_NC" | grep -q $'\x1b\['; then
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: NO_COLOR still contains ANSI codes"
+else
+  PASS=$((PASS + 1))
+fi
+assert_contains "NO_COLOR model name" "$OUT_NC" "Opus 4.6"
+assert_contains "NO_COLOR context" "$OUT_NC" "38%"
+assert_contains "NO_COLOR cost" "$OUT_NC" '$8.4'
+assert_line_count "NO_COLOR outputs 2 lines" "$OUT_NC" 2
+
+# STATUSLINE_NO_COLOR should also work
+OUT_SNC=$(STATUSLINE_NO_COLOR=1 render basic-session.json)
+if echo "$OUT_SNC" | grep -q $'\x1b\['; then
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: STATUSLINE_NO_COLOR still contains ANSI codes"
+else
+  PASS=$((PASS + 1))
+fi
+
+# ============================================================
 # Summary
 # ============================================================
 echo ""

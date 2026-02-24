@@ -26,6 +26,12 @@ for _dep in jq bc; do
   fi
 done
 
+# --- Color support (https://no-color.org/) ---
+_NO_COLOR=false
+if [ -n "${NO_COLOR:-}" ] || [ -n "${STATUSLINE_NO_COLOR:-}" ]; then
+  _NO_COLOR=true
+fi
+
 # --- Model ---
 MODEL=$(echo "$input" | jq -r '.model.display_name // "?"' | sed 's/^Claude //')
 
@@ -378,4 +384,11 @@ if [ -n "$CUM_ALL" ]; then
   L2="${L2} ${S} ${CUM_ALL}"
 fi
 
-printf "%b\n%b\n" "$L1" "$L2"
+if $_NO_COLOR; then
+  _strip_ansi() { sed 's/\x1b\[[0-9;]*m//g'; }
+  L1=$(printf "%b" "$L1" | _strip_ansi)
+  L2=$(printf "%b" "$L2" | _strip_ansi)
+  printf "%s\n%s\n" "$L1" "$L2"
+else
+  printf "%b\n%b\n" "$L1" "$L2"
+fi
