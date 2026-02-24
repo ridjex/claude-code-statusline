@@ -1,7 +1,7 @@
 #!/bin/bash
 # Claude Code Status Line — Installer
 # Idempotent: safe to run on fresh install, upgrade, or to fix broken config.
-# Auto-detects the best available engine (python > bash).
+# Auto-detects the best available engine (go > python > bash).
 
 set -euo pipefail
 

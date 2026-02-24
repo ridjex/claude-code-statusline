@@ -7,8 +7,8 @@ metadata:
 
 # Claude Code Status Line Manager
 
-Multi-engine status bar for Claude Code. Ships with bash and python engines.
-The installer auto-detects the best available engine (python > bash).
+Multi-engine status bar for Claude Code. Ships with Go, Python, and Bash engines.
+The installer auto-detects the best available engine (go > python > bash).
 
 ## Quick Reference
 
@@ -193,4 +193,4 @@ stdin JSON ──> statusline.sh ──> 1-2 formatted lines (stdout)
                         └── cumulative-stats.sh → update cost caches
 ```
 
-Performance: ~5ms render (reads JSON caches, no parsing in hot path).
+Performance: ~11ms render with Go engine (zero subprocesses in hot path).

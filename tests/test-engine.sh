@@ -248,6 +248,15 @@ assert_not_contains "no diff added" "$OUT_NODIFF" "+127"
 OUT_NOSPD=$(STATUSLINE_SHOW_SPEED=false render basic-session.json)
 assert_not_contains "no speed" "$OUT_NOSPD" "tok/s"
 
+# Hide cumulative (with caches present)
+cp "$FIXTURES/cumulative-proj.json" "$TEST_CACHE/claude-code-statusline/proj-${_HASH}.json"
+cp "$FIXTURES/cumulative-all.json" "$TEST_CACHE/claude-code-statusline/all.json"
+OUT_NOCUM=$(STATUSLINE_SHOW_CUMULATIVE=false render basic-session.json)
+assert_not_contains "no cumulative proj" "$OUT_NOCUM" "⌂"
+assert_not_contains "no cumulative all" "$OUT_NOCUM" "Σ"
+rm -f "$TEST_CACHE/claude-code-statusline/proj-${_HASH}.json"
+rm -f "$TEST_CACHE/claude-code-statusline/all.json"
+
 # ============================================================
 echo "=== CLI arguments ==="
 # ============================================================
@@ -264,6 +273,25 @@ assert_not_contains "multi --no-cost" "$OUT_MULTI" '$8.4'
 assert_not_contains "multi --no-diff" "$OUT_MULTI" "+127"
 assert_contains "multi still has model" "$OUT_MULTI" "Opus 4.6"
 
+# Test --no-color
+OUT_ARGNC=$(XDG_CACHE_HOME="$TEST_CACHE" $ENGINE --no-color < "$FIXTURES/basic-session.json" 2>/dev/null)
+if echo "$OUT_ARGNC" | grep -q $'\x1b\['; then
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: --no-color still has ANSI"
+else
+  PASS=$((PASS + 1))
+fi
+
+# Test --help (should print to stderr and exit 0)
+HELP_OUT=$($ENGINE --help 2>&1 </dev/null)
+HELP_RC=$?
+if [ "$HELP_RC" -eq 0 ] && echo "$HELP_OUT" | grep -qi "usage"; then
+  PASS=$((PASS + 1))
+else
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: --help did not print usage or exited non-zero (rc=$HELP_RC)"
+fi
+
 # ============================================================
 echo "=== NO_COLOR mode ==="
 # ============================================================
@@ -279,6 +307,39 @@ assert_contains "NO_COLOR model name" "$OUT_NC" "Opus 4.6"
 assert_contains "NO_COLOR context" "$OUT_NC" "38%"
 assert_contains "NO_COLOR cost" "$OUT_NC" '$8.4'
 assert_line_count "NO_COLOR outputs 2 lines" "$OUT_NC" 2
+
+# STATUSLINE_NO_COLOR should also work
+OUT_SNC=$(STATUSLINE_NO_COLOR=1 render basic-session.json)
+if echo "$OUT_SNC" | grep -q $'\x1b\['; then
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: STATUSLINE_NO_COLOR still contains ANSI codes"
+else
+  PASS=$((PASS + 1))
+fi
+
+# ============================================================
+echo "=== Malformed input ==="
+# ============================================================
+
+# Empty input should not crash, should output 2 lines
+OUT_EMPTY=$(echo "" | XDG_CACHE_HOME="$TEST_CACHE" $ENGINE 2>/dev/null || true)
+EMPTY_LINES=$(echo "$OUT_EMPTY" | wc -l | tr -d ' ')
+if [ "$EMPTY_LINES" -ge 1 ]; then
+  PASS=$((PASS + 1))
+else
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: empty input produced no output"
+fi
+
+# Invalid JSON should not crash
+OUT_BAD=$(echo "{invalid json" | XDG_CACHE_HOME="$TEST_CACHE" $ENGINE 2>/dev/null || true)
+BAD_LINES=$(echo "$OUT_BAD" | wc -l | tr -d ' ')
+if [ "$BAD_LINES" -ge 1 ]; then
+  PASS=$((PASS + 1))
+else
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: invalid JSON caused crash"
+fi
 
 # ============================================================
 # Summary

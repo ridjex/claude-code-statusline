@@ -15,6 +15,7 @@ brew install hyperfine   # macOS
 make bench           # benchmark all available engines
 make bench-bash      # benchmark bash only
 make bench-python    # benchmark python only
+make bench-go        # benchmark Go only
 make profile         # detailed bash subprocess profiling
 ```
 
@@ -51,9 +52,9 @@ This reveals where bash spends time and why alternatives (Python with native JSO
 
 | Engine | Render time | Subprocesses | Notes |
 |--------|-------------|--------------|-------|
-| Bash | 30-100ms | 27-35 | jq + bc + git forks |
+| **Go** | **~11ms** | **0** | Single binary, go-git (pure Go) |
 | Python | 5-15ms | 5-8 | Native JSON/math, only git forks |
-| Go | ~1-3ms | 0 | Single binary, libgit2 (planned) |
+| Bash | 30-100ms | 27-35 | jq + bc + git forks |
 | Rust | <1ms | 0 | Zero-cost abstractions (planned) |
 
 ## Results directory

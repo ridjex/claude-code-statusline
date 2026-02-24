@@ -24,8 +24,17 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: engines/go/go.sum
+
+      - name: Build Go binary
+        run: cd engines/go && go build -o statusline ./cmd/statusline
+
       - name: Run benchmarks
-        run: ./benchmarks/bench.sh bash python
+        run: ./benchmarks/bench.sh bash python go
 
       - name: Upload results
         uses: actions/upload-artifact@v4

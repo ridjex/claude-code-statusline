@@ -107,15 +107,33 @@ elif cost >= 10:
 
 The Python engine produces **byte-identical output** to bash. Verified by the engine-agnostic test suite.
 
-## Chapter 4: Go Port (Planned)
+## Chapter 4: Go Port (Shipped)
 
-Go eliminates the last remaining subprocesses (git calls) via go-git:
+Go eliminates the last remaining subprocesses (git calls) via go-git (pure Go):
 
-- Single compiled binary (~5MB)
-- Native JSON parsing (encoding/json)
-- Native git operations (go-git)
+- Single compiled binary (~15MB, due to go-git's dependency tree)
+- Native JSON parsing (`encoding/json` — single `Unmarshal`)
+- Native git operations (go-git — zero subprocess, zero CGO)
 - Cross-compilation for all platforms
-- Expected: ~1-3ms render time
+- Measured: **~11ms average render** (8ms min)
+
+### Results
+
+| Metric | Python | Go | Improvement |
+|--------|--------|------|-------------|
+| Subprocesses | 5-8 | 0 | 100% fewer |
+| Render time | 5-15ms | ~11ms | Comparable (startup-bound) |
+| Git operations | subprocess | pure Go | Zero fork overhead |
+| Binary size | — | ~15MB | Single file, no deps |
+| Dependencies | python3 | none | Fully self-contained |
+
+The Go engine produces **byte-identical output** to bash and Python. Verified by the engine-agnostic test suite (76 assertions).
+
+### Key tradeoffs
+
+- **Binary size**: 15MB due to go-git pulling in crypto/ssh/transport. Could reduce to ~12MB with `-ldflags="-s -w"` or ~4MB with UPX.
+- **go-git limitations**: No reflog API (stash counted via direct file read), no rev-list equivalent (ahead/behind uses 1000-commit walk cap).
+- **Cumulative stats**: Still delegates to `cumulative-stats.sh` — the bash aggregator has complex file locking not worth reimplementing.
 
 ## Chapter 5: Rust Port (Planned)
 
