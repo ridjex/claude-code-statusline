@@ -1,14 +1,14 @@
-.PHONY: help install uninstall test test-verbose demo check verify diagnose
+.PHONY: help install uninstall test test-verbose test-python test-go test-all build-go bench bench-bash bench-python bench-go profile demo check verify diagnose
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
-install: check ## Install status line to ~/.claude/
+install: check ## Install status line to ~/.claude/ (auto-detects best engine)
 	@./install.sh
 
 uninstall: ## Remove status line and caches
 	@echo "Removing status line..."
-	@rm -f ~/.claude/statusline.sh ~/.claude/cumulative-stats.sh ~/.claude/statusline.env
+	@rm -f ~/.claude/statusline.sh ~/.claude/statusline.py ~/.claude/cumulative-stats.sh ~/.claude/statusline.env
 	@rm -rf "$${XDG_CACHE_HOME:-$$HOME/.cache}/claude-code-statusline"
 	@rm -rf ~/.claude/skills/statusline
 	@if [ -f ~/.claude/settings.json ] && command -v jq >/dev/null 2>&1; then \
@@ -18,11 +18,38 @@ uninstall: ## Remove status line and caches
 	fi
 	@echo "[ok] Uninstalled"
 
-test: ## Run test suite (54 assertions)
+test: ## Run bash engine test suite
 	@./tests/run-tests.sh
 
-test-verbose: ## Run tests with rendered output
+test-verbose: ## Run bash tests with rendered output
 	@./tests/run-tests.sh -v
+
+test-python: ## Run engine-agnostic tests against Python engine
+	@./tests/test-engine.sh "python3 engines/python/statusline.py"
+
+build-go: ## Build Go engine binary
+	@cd engines/go && go build -o statusline ./cmd/statusline
+	@echo "[ok] Go engine built: engines/go/statusline"
+
+test-go: build-go ## Run engine-agnostic tests against Go engine
+	@./tests/test-engine.sh "engines/go/statusline"
+
+test-all: test test-python test-go ## Run tests for all engines
+
+bench: ## Benchmark all available engines (requires hyperfine)
+	@./benchmarks/bench.sh
+
+bench-bash: ## Benchmark bash engine only
+	@./benchmarks/bench.sh bash
+
+bench-python: ## Benchmark python engine only
+	@./benchmarks/bench.sh python
+
+bench-go: build-go ## Benchmark Go engine only
+	@./benchmarks/bench.sh go
+
+profile: ## Detailed bash subprocess profiling
+	@./benchmarks/profile-bash.sh
 
 demo: ## Regenerate demo SVGs from fixtures
 	@./scripts/generate-demo.sh
@@ -52,6 +79,7 @@ diagnose: ## Check installation health and config
 	@echo "=== Scripts ==="
 	@[ -x ~/.claude/statusline.sh ] && echo "  [ok] statusline.sh" || echo "  [!!] statusline.sh — missing or not executable"
 	@[ -x ~/.claude/cumulative-stats.sh ] && echo "  [ok] cumulative-stats.sh" || echo "  [!!] cumulative-stats.sh — missing or not executable"
+	@[ -f ~/.claude/statusline.py ] && echo "  [ok] statusline.py (python engine)" || echo "  [i ] statusline.py — not installed (using bash engine)"
 	@echo ""
 	@echo "=== settings.json ==="
 	@if [ -f ~/.claude/settings.json ]; then \

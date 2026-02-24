@@ -13,6 +13,13 @@
 *.bak
 *.tmp
 
+# Benchmark results (machine-specific)
+benchmarks/results/*.json
+benchmarks/results/*.md
+
+# Compiled binaries
+engines/go/statusline
+
 # Cache (local dev)
 .cache/
 .claude/

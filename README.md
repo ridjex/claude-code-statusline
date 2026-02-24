@@ -19,7 +19,7 @@ brew install jq                    # bc and git are pre-installed on macOS
 
 git clone https://github.com/ridjex/claude-code-statusline.git
 cd claude-code-statusline
-make install                       # installs scripts + configures settings.json
+make install                       # auto-detects best engine (python > bash)
 ```
 
 Verify it works (run inside any git repo):
@@ -35,6 +35,21 @@ Then open a new Claude Code session.
 ```bash
 make uninstall                     # removes scripts, caches, and settings.json entry
 ```
+
+## Engines
+
+The statusline ships with multiple engine implementations. The installer auto-detects and installs the best available one.
+
+| Engine | Status | Subprocesses | Render time | Requirements |
+|--------|--------|-------------|-------------|--------------|
+| **Python** | Stable | 5-8 (git only) | 5-15ms | python3 (stdlib only) |
+| **Bash** | Stable | 27-35 (jq+bc+git) | 30-100ms | jq, bc, git |
+| Go | Planned | 0 | ~1-3ms | — |
+| Rust | Planned | 0 | <1ms | — |
+
+All engines produce **identical output** for the same input. The engine-agnostic test suite verifies this.
+
+`~/.claude/statusline.sh` is always the entry point. For Python, it's a thin wrapper that calls `statusline.py`. Users never need to know which engine is running.
 
 ## Configuration
 
@@ -83,8 +98,14 @@ Config precedence: **CLI args > env vars > `~/.claude/statusline.env` > defaults
 
 ```bash
 make                  # show all targets
-make test             # run test suite
+make test             # run bash engine tests (80 assertions)
+make test-python      # run engine-agnostic tests against Python
+make test-all         # run all engine tests
 make test-verbose     # shows rendered output for each scenario
+make bench            # benchmark all engines (requires hyperfine)
+make bench-bash       # benchmark bash only
+make bench-python     # benchmark python only
+make profile          # detailed bash subprocess profiling
 make demo             # regenerate demo SVGs
 make check            # verify dependencies
 make diagnose         # check installation health
@@ -145,7 +166,7 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
                         └── cumulative-stats.sh → update cost caches
 ```
 
-- Render: ~5ms (reads JSON caches, no parsing)
+- Render: ~5-15ms (Python) / ~30-100ms (Bash)
 - Background model parse: ~50-100ms
 - Background cost scan: ~2-14s (depends on transcript volume, cached 5min)
 
@@ -153,7 +174,8 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
 
 ```
 ~/.claude/
-  statusline.sh          # main renderer
+  statusline.sh          # entry point (wrapper for python, or bash engine directly)
+  statusline.py          # python engine (if installed)
   cumulative-stats.sh    # background cost aggregator
 
 ~/.cache/claude-code-statusline/
@@ -198,22 +220,34 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
 
 ```
 claude-code-statusline/
-  CLAUDE.md                 # project knowledge for Claude Code
-  Makefile                  # all commands: make help
-  install.sh                # idempotent installer
-  src/
-    statusline.sh            # main renderer
-    cumulative-stats.sh      # background cost aggregator
-    statusline.env.default   # default config template
-  skill/
-    SKILL.md                 # Claude Code /statusline skill
+  engines/
+    bash/                    # v1 — bash engine
+      statusline.sh           # main renderer
+      cumulative-stats.sh     # background cost aggregator
+      statusline.env.default  # default config template
+    python/                  # v2 — python engine
+      statusline.py           # single-file renderer (stdlib only)
+      pyproject.toml          # project metadata
+    go/                      # v3 — planned
+    rust/                    # v4 — planned
+  benchmarks/
+    bench.sh                 # hyperfine engine comparison
+    profile-bash.sh          # detailed subprocess profiling
+    results/                 # benchmark output (gitignored)
   tests/
-    run-tests.sh             # test runner
-    fixtures/                # mock JSON data for all scenarios
+    run-tests.sh             # bash-specific test runner
+    test-engine.sh           # engine-agnostic test runner
+    fixtures/                # shared mock JSON data
   scripts/
-    generate-demo.sh         # runs statusline.sh with fixtures → ANSI
-    ansi2svg.py              # converts ANSI output → SVG (dark + light)
+    generate-demo.sh         # fixture → ANSI → SVG
+    ansi2svg.py              # ANSI-to-SVG converter
+  src/                       # symlinks → engines/bash/ (backward compat)
+  skill/SKILL.md             # Claude Code /statusline skill
+  install.sh                 # stack-agnostic installer
+  Makefile                   # unified build targets
+  docs/
+    performance-journey.md   # article: bash → python → go → rust
   assets/
-    demo-dark.svg            # auto-generated, verified in CI
-    demo-light.svg           # auto-generated, verified in CI
+    demo-dark.svg            # auto-generated
+    demo-light.svg           # auto-generated
 ```
