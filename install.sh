@@ -42,6 +42,15 @@ cp "$SCRIPT_DIR/src/cumulative-stats.sh" "$DEST_DIR/cumulative-stats.sh"
 chmod +x "$DEST_DIR/statusline.sh" "$DEST_DIR/cumulative-stats.sh"
 echo "[ok] Scripts installed"
 
+# Copy default config (only if user doesn't have one)
+SL_ENV="$DEST_DIR/statusline.env"
+if [ ! -f "$SL_ENV" ]; then
+  cp "$SCRIPT_DIR/src/statusline.env.default" "$SL_ENV"
+  echo "[ok] Created $SL_ENV (edit to customize sections)"
+else
+  echo "[ok] Existing $SL_ENV preserved"
+fi
+
 # Configure settings.json (handles all scenarios)
 if [ -f "$SETTINGS" ]; then
   cp "$SETTINGS" "$SETTINGS.bak"
@@ -73,6 +82,14 @@ if [ -f "$SETTINGS" ]; then
 else
   printf '{\"statusLine\":%s}\n' "$SL_CONFIG" | jq . > "$SETTINGS"
   echo "[ok] Created $SETTINGS"
+fi
+
+# Install Claude Code skill (for /statusline command)
+SKILL_DIR="$DEST_DIR/skills/statusline"
+if [ -f "$SCRIPT_DIR/skill/SKILL.md" ]; then
+  mkdir -p "$SKILL_DIR"
+  cp "$SCRIPT_DIR/skill/SKILL.md" "$SKILL_DIR/SKILL.md"
+  echo "[ok] Skill installed (/statusline command available)"
 fi
 
 echo ""

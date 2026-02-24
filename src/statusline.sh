@@ -32,53 +32,67 @@ if [ -n "${NO_COLOR:-}" ] || [ -n "${STATUSLINE_NO_COLOR:-}" ]; then
   _NO_COLOR=true
 fi
 
+# --- User config (all default to true) ---
+_SL_CFG="${HOME}/.claude/statusline.env"
+[ -f "$_SL_CFG" ] && . "$_SL_CFG"
+_show() { [ "${1:-true}" != "false" ]; }
+# Shortcuts: _show "$STATUSLINE_SHOW_X" && <build section>
+
 # --- Model ---
-MODEL=$(echo "$input" | jq -r '.model.display_name // "?"' | sed 's/^Claude //')
+MODEL=""
+if _show "${STATUSLINE_SHOW_MODEL:-}"; then
+  MODEL=$(echo "$input" | jq -r '.model.display_name // "?"' | sed 's/^Claude //')
+fi
 
 # --- Context bar (10 chars) ---
-PCT=$(echo "$input" | jq -r '.context_window.used_percentage // 0' | cut -d. -f1)
-FILLED=$((PCT / 10))
-[ "$FILLED" -gt 10 ] && FILLED=10
-EMPTY=$((10 - FILLED))
-BAR=""
-[ "$FILLED" -gt 0 ] && BAR=$(printf "%${FILLED}s" | sed 's/ /▓/g')
-[ "$EMPTY" -gt 0 ] && BAR="${BAR}$(printf "%${EMPTY}s" | sed 's/ /░/g')"
-WARN=""
-if [ "$PCT" -ge 90 ]; then
-  CLR="\033[31m"
-  WARN=" ⚠"
-elif [ "$PCT" -ge 70 ]; then
-  CLR="\033[33m"
-  WARN=" ⚠"
-else
-  CLR="\033[32m"
+PCT=0 BAR="" WARN="" CLR="\033[32m"
+if _show "${STATUSLINE_SHOW_CONTEXT:-}"; then
+  PCT=$(echo "$input" | jq -r '.context_window.used_percentage // 0' | cut -d. -f1)
+  FILLED=$((PCT / 10))
+  [ "$FILLED" -gt 10 ] && FILLED=10
+  EMPTY=$((10 - FILLED))
+  [ "$FILLED" -gt 0 ] && BAR=$(printf "%${FILLED}s" | sed 's/ /▓/g')
+  [ "$EMPTY" -gt 0 ] && BAR="${BAR}$(printf "%${EMPTY}s" | sed 's/ /░/g')"
+  if [ "$PCT" -ge 90 ]; then
+    CLR="\033[31m"; WARN=" ⚠"
+  elif [ "$PCT" -ge 70 ]; then
+    CLR="\033[33m"; WARN=" ⚠"
+  fi
 fi
 
 # --- Cost (session) ---
-COST=$(echo "$input" | jq -r '.cost.total_cost_usd // 0')
-# Compact: ≥1000→$12.0k, ≥100→$374, ≥10→$14, ≥1→$8.4, <1→$0.12
-if [ "$(echo "$COST >= 1000" | bc 2>/dev/null)" = "1" ]; then
-  COST_FMT="\$$(printf "%.1fk" "$(echo "$COST / 1000" | bc -l)")"
-elif [ "$(echo "$COST >= 10" | bc 2>/dev/null)" = "1" ]; then
-  COST_FMT="\$$(printf "%.0f" "$COST")"
-elif [ "$(echo "$COST >= 1" | bc 2>/dev/null)" = "1" ]; then
-  COST_FMT="\$$(printf "%.1f" "$COST")"
-else
-  COST_FMT="\$$(printf "%.2f" "$COST")"
+COST_FMT=""
+if _show "${STATUSLINE_SHOW_COST:-}"; then
+  COST=$(echo "$input" | jq -r '.cost.total_cost_usd // 0')
+  # Compact: ≥1000→$12.0k, ≥100→$374, ≥10→$14, ≥1→$8.4, <1→$0.12
+  if [ "$(echo "$COST >= 1000" | bc 2>/dev/null)" = "1" ]; then
+    COST_FMT="\$$(printf "%.1fk" "$(echo "$COST / 1000" | bc -l)")"
+  elif [ "$(echo "$COST >= 10" | bc 2>/dev/null)" = "1" ]; then
+    COST_FMT="\$$(printf "%.0f" "$COST")"
+  elif [ "$(echo "$COST >= 1" | bc 2>/dev/null)" = "1" ]; then
+    COST_FMT="\$$(printf "%.1f" "$COST")"
+  else
+    COST_FMT="\$$(printf "%.2f" "$COST")"
+  fi
 fi
 
 # --- Duration ---
-DUR_MS=$(echo "$input" | jq -r '.cost.total_duration_ms // 0' | cut -d. -f1)
-DUR_MIN=$((DUR_MS / 60000))
-if [ "$DUR_MIN" -ge 60 ]; then
-  DUR_FMT="$((DUR_MIN / 60))h$((DUR_MIN % 60))m"
-else
-  DUR_FMT="${DUR_MIN}m"
+DUR_FMT=""
+if _show "${STATUSLINE_SHOW_DURATION:-}"; then
+  DUR_MS=$(echo "$input" | jq -r '.cost.total_duration_ms // 0' | cut -d. -f1)
+  DUR_MIN=$((DUR_MS / 60000))
+  if [ "$DUR_MIN" -ge 60 ]; then
+    DUR_FMT="$((DUR_MIN / 60))h$((DUR_MIN % 60))m"
+  else
+    DUR_FMT="${DUR_MIN}m"
+  fi
 fi
 
 # --- Git branch + worktree ---
+BRANCH="" GIT_DISPLAY=""
+if _show "${STATUSLINE_SHOW_GIT:-}"; then
 BRANCH=$(git branch --show-current 2>/dev/null || echo "")
-GIT_DISPLAY=""
+fi
 if [ -n "$BRANCH" ]; then
   TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null)
   COMMON=$(git rev-parse --git-common-dir 2>/dev/null)
@@ -151,11 +165,13 @@ if [ -n "$BRANCH" ]; then
 fi
 
 # --- Lines added/removed ---
-ADDED=$(echo "$input" | jq -r '.cost.total_lines_added // 0')
-REMOVED=$(echo "$input" | jq -r '.cost.total_lines_removed // 0')
 LINES=""
-if [ "$ADDED" -gt 0 ] || [ "$REMOVED" -gt 0 ]; then
-  LINES="\033[32m+${ADDED}\033[0m \033[31m-${REMOVED}\033[0m"
+if _show "${STATUSLINE_SHOW_DIFF:-}"; then
+  ADDED=$(echo "$input" | jq -r '.cost.total_lines_added // 0')
+  REMOVED=$(echo "$input" | jq -r '.cost.total_lines_removed // 0')
+  if [ "$ADDED" -gt 0 ] || [ "$REMOVED" -gt 0 ]; then
+    LINES="\033[32m+${ADDED}\033[0m \033[31m-${REMOVED}\033[0m"
+  fi
 fi
 
 # ============================================================
@@ -184,8 +200,9 @@ IN_FMT=$(fmt_k "$IN_TOK")
 OUT_FMT=$(fmt_k "$OUT_TOK")
 
 # --- Speed (output tok/s) ---
-API_MS=$(echo "$input" | jq -r '.cost.total_api_duration_ms // 0' | cut -d. -f1)
 SPEED_FMT=""
+if _show "${STATUSLINE_SHOW_SPEED:-}"; then
+API_MS=$(echo "$input" | jq -r '.cost.total_api_duration_ms // 0' | cut -d. -f1)
 if [ "$API_MS" -gt 0 ] && [ "$OUT_TOK" -gt 0 ]; then
   SPEED=$(echo "$OUT_TOK * 1000 / $API_MS" | bc -l 2>/dev/null)
   SPEED_INT=$(printf "%.0f" "$SPEED")
@@ -198,10 +215,11 @@ if [ "$API_MS" -gt 0 ] && [ "$OUT_TOK" -gt 0 ]; then
   fi
   SPEED_FMT="${SPEED_CLR}$(printf "%.0f" "$SPEED") tok/s\033[0m"
 fi
+fi
 
 # --- Cumulative stats (from per-project + shared cache) ---
-PROJECT_DIR=$(echo "$input" | jq -r '.workspace.project_dir // empty')
 _CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-code-statusline"
+PROJECT_DIR=$(echo "$input" | jq -r '.workspace.project_dir // empty')
 CUM_PROJ="" CUM_ALL=""
 
 # Format cost: ≥1000→$12.0k, ≥100→$374, ≥10→$14, ≥1→$8.4, <1→$0.12
@@ -221,7 +239,7 @@ fmt_cost() {
 }
 
 # Compute project hash (same logic as cumulative-stats.sh)
-if [ -n "$PROJECT_DIR" ]; then
+if _show "${STATUSLINE_SHOW_CUMULATIVE:-}" && [ -n "$PROJECT_DIR" ]; then
   _SLUG=$(echo "$PROJECT_DIR" | sed 's|^/||; s|/|-|g')
   if command -v md5 &>/dev/null; then
     _PROJ_HASH=$(echo "$_SLUG" | md5 -q | cut -c1-8)
@@ -240,13 +258,15 @@ if [ -n "$PROJECT_DIR" ]; then
   fi
 fi
 
-ALL_CACHE="$_CACHE_DIR/all.json"
-if [ -f "$ALL_CACHE" ]; then
-  A1=$(jq -r '.d1.cost // 0' "$ALL_CACHE")
-  A7=$(jq -r '.d7.cost // 0' "$ALL_CACHE")
-  A30=$(jq -r '.d30.cost // 0' "$ALL_CACHE")
-  if [ "$(echo "$A1 > 0 || $A7 > 0 || $A30 > 0" | bc 2>/dev/null)" = "1" ]; then
-    CUM_ALL="Σ $(fmt_cost "$A1")/$(fmt_cost "$A7")/$(fmt_cost "$A30")"
+if _show "${STATUSLINE_SHOW_CUMULATIVE:-}"; then
+  ALL_CACHE="$_CACHE_DIR/all.json"
+  if [ -f "$ALL_CACHE" ]; then
+    A1=$(jq -r '.d1.cost // 0' "$ALL_CACHE")
+    A7=$(jq -r '.d7.cost // 0' "$ALL_CACHE")
+    A30=$(jq -r '.d30.cost // 0' "$ALL_CACHE")
+    if [ "$(echo "$A1 > 0 || $A7 > 0 || $A30 > 0" | bc 2>/dev/null)" = "1" ]; then
+      CUM_ALL="Σ $(fmt_cost "$A1")/$(fmt_cost "$A7")/$(fmt_cost "$A30")"
+    fi
   fi
 fi
 
@@ -297,7 +317,7 @@ if [ -n "$SESSION_ID" ]; then
   [ "$SONNET_OUT" -gt "$MAX_OUT" ] 2>/dev/null && MAX_OUT=$SONNET_OUT
   [ "$HAIKU_OUT" -gt "$MAX_OUT" ] 2>/dev/null && MAX_OUT=$HAIKU_OUT
 
-  if [ "$MAX_OUT" -gt 0 ] 2>/dev/null; then
+  if _show "${STATUSLINE_SHOW_MODEL_BARS:-}" && [ "$MAX_OUT" -gt 0 ] 2>/dev/null; then
     O_BAR=$(_bar_char "$OPUS_OUT" "$MAX_OUT")
     S_BAR=$(_bar_char "$SONNET_OUT" "$MAX_OUT")
     H_BAR=$(_bar_char "$HAIKU_OUT" "$MAX_OUT")
@@ -336,59 +356,69 @@ DIM="\033[2m"
 RST="\033[0m"
 S="${DIM}│${RST}"
 
-# --- Line 1 ---
-L1="\033[36m${MODEL}${RST}"
-[ -n "$MODEL_MIX" ] && L1="${L1} ${MODEL_MIX}"
-L1="${L1} ${S} ${CLR}${BAR} ${PCT}%${WARN}${RST}"
-L1="${L1} ${S} ${COST_FMT}"
-L1="${L1} ${S} ${DUR_FMT}"
+# --- Line 1 (append non-empty sections with separator) ---
+_parts=()
+[ -n "$MODEL" ] && _parts+=("\033[36m${MODEL}${RST}")
+[ -n "$MODEL_MIX" ] && { [ ${#_parts[@]} -gt 0 ] && _parts[-1]="${_parts[-1]} ${MODEL_MIX}" || _parts+=("${MODEL_MIX}"); }
+[ -n "$BAR" ] && _parts+=("${CLR}${BAR} ${PCT}%${WARN}${RST}")
+[ -n "$COST_FMT" ] && _parts+=("${COST_FMT}")
+[ -n "$DUR_FMT" ] && _parts+=("${DUR_FMT}")
 if [ -n "$GIT_DISPLAY" ]; then
   GIT_PART="\033[35m${GIT_DISPLAY}\033[0m"
-  if [ -n "$DIRTY" ]; then
-    GIT_PART="${GIT_PART} \033[33m${DIRTY}\033[0m"
-  fi
-  if [ -n "$GIT_EXTRA" ]; then
-    GIT_PART="${GIT_PART} \033[36m${GIT_EXTRA}\033[0m"
-  fi
-  L1="${L1} ${S} ${GIT_PART}"
+  [ -n "$DIRTY" ] && GIT_PART="${GIT_PART} \033[33m${DIRTY}\033[0m"
+  [ -n "$GIT_EXTRA" ] && GIT_PART="${GIT_PART} \033[36m${GIT_EXTRA}\033[0m"
+  _parts+=("${GIT_PART}")
 fi
-if [ -n "$LINES" ]; then
-  L1="${L1} ${S} ${LINES}"
-fi
+[ -n "$LINES" ] && _parts+=("${LINES}")
 
-# --- Line 2 ---
-# Per-model token breakdown (O:in/out S:in/out H:in/out) or fallback to totals
+L1=""
+for _i in "${!_parts[@]}"; do
+  [ "$_i" -gt 0 ] && L1="${L1} ${S} "
+  L1="${L1}${_parts[$_i]}"
+done
+
+# --- Line 2 (controlled by STATUSLINE_LINE2) ---
 L2=""
-if [ "$OPUS_OUT" -gt 0 ] 2>/dev/null || [ "$OPUS_IN" -gt 0 ] 2>/dev/null; then
-  L2="\033[35mO\033[0m:$(fmt_k "$OPUS_IN")/$(fmt_k "$OPUS_OUT")"
-fi
-if [ "$SONNET_OUT" -gt 0 ] 2>/dev/null || [ "$SONNET_IN" -gt 0 ] 2>/dev/null; then
-  [ -n "$L2" ] && L2="$L2 "
-  L2="${L2}\033[36mS\033[0m:$(fmt_k "$SONNET_IN")/$(fmt_k "$SONNET_OUT")"
-fi
-if [ "$HAIKU_OUT" -gt 0 ] 2>/dev/null || [ "$HAIKU_IN" -gt 0 ] 2>/dev/null; then
-  [ -n "$L2" ] && L2="$L2 "
-  L2="${L2}\033[32mH\033[0m:$(fmt_k "$HAIKU_IN")/$(fmt_k "$HAIKU_OUT")"
-fi
-# Fallback if no model cache yet
-if [ -z "$L2" ]; then
-  L2="\033[2min:\033[0m${IN_FMT} \033[2mout:\033[0m${OUT_FMT}"
-fi
-if [ -n "$SPEED_FMT" ]; then
-  L2="${L2} ${S} ${SPEED_FMT}"
-fi
-if [ -n "$CUM_PROJ" ]; then
-  L2="${L2} ${S} ${CUM_PROJ}"
-fi
-if [ -n "$CUM_ALL" ]; then
-  L2="${L2} ${S} ${CUM_ALL}"
+if _show "${STATUSLINE_LINE2:-}"; then
+  if _show "${STATUSLINE_SHOW_TOKENS:-}"; then
+    if [ "$OPUS_OUT" -gt 0 ] 2>/dev/null || [ "$OPUS_IN" -gt 0 ] 2>/dev/null; then
+      L2="\033[35mO\033[0m:$(fmt_k "$OPUS_IN")/$(fmt_k "$OPUS_OUT")"
+    fi
+    if [ "$SONNET_OUT" -gt 0 ] 2>/dev/null || [ "$SONNET_IN" -gt 0 ] 2>/dev/null; then
+      [ -n "$L2" ] && L2="$L2 "
+      L2="${L2}\033[36mS\033[0m:$(fmt_k "$SONNET_IN")/$(fmt_k "$SONNET_OUT")"
+    fi
+    if [ "$HAIKU_OUT" -gt 0 ] 2>/dev/null || [ "$HAIKU_IN" -gt 0 ] 2>/dev/null; then
+      [ -n "$L2" ] && L2="$L2 "
+      L2="${L2}\033[32mH\033[0m:$(fmt_k "$HAIKU_IN")/$(fmt_k "$HAIKU_OUT")"
+    fi
+    # Fallback if no model cache yet
+    if [ -z "$L2" ]; then
+      L2="\033[2min:\033[0m${IN_FMT} \033[2mout:\033[0m${OUT_FMT}"
+    fi
+  fi
+  [ -n "$SPEED_FMT" ] && { [ -n "$L2" ] && L2="${L2} ${S} ${SPEED_FMT}" || L2="${SPEED_FMT}"; }
+  [ -n "$CUM_PROJ" ] && { [ -n "$L2" ] && L2="${L2} ${S} ${CUM_PROJ}" || L2="${CUM_PROJ}"; }
+  [ -n "$CUM_ALL" ] && { [ -n "$L2" ] && L2="${L2} ${S} ${CUM_ALL}" || L2="${CUM_ALL}"; }
 fi
 
+# --- Output ---
 if $_NO_COLOR; then
   _strip_ansi() { sed 's/\x1b\[[0-9;]*m//g'; }
   L1=$(printf "%b" "$L1" | _strip_ansi)
-  L2=$(printf "%b" "$L2" | _strip_ansi)
-  printf "%s\n%s\n" "$L1" "$L2"
+  [ -n "$L2" ] && L2=$(printf "%b" "$L2" | _strip_ansi)
+fi
+
+if [ -n "$L2" ]; then
+  if $_NO_COLOR; then
+    printf "%s\n%s\n" "$L1" "$L2"
+  else
+    printf "%b\n%b\n" "$L1" "$L2"
+  fi
 else
-  printf "%b\n%b\n" "$L1" "$L2"
+  if $_NO_COLOR; then
+    printf "%s\n\n" "$L1"
+  else
+    printf "%b\n\n" "$L1"
+  fi
 fi

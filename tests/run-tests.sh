@@ -270,6 +270,49 @@ else
 fi
 
 # ============================================================
+echo "=== Section toggles ==="
+# ============================================================
+
+# LINE2=false → only 1 line output
+OUT_L1=$(STATUSLINE_LINE2=false render basic-session.json)
+$VERBOSE && echo "$OUT_L1" && echo ""
+assert_contains "L2 off still has model" "$OUT_L1" "Opus 4.6"
+assert_not_contains "L2 off no tok/s" "$OUT_L1" "tok/s"
+
+# Hide git
+OUT_NOGIT=$(STATUSLINE_SHOW_GIT=false render basic-session.json)
+assert_not_contains "no git branch" "$OUT_NOGIT" "main"
+
+# Hide cost
+OUT_NOCOST=$(STATUSLINE_SHOW_COST=false render basic-session.json)
+assert_not_contains "no cost" "$OUT_NOCOST" '$8.4'
+
+# Hide duration
+OUT_NODUR=$(STATUSLINE_SHOW_DURATION=false render basic-session.json)
+assert_not_contains "no duration" "$OUT_NODUR" "15m"
+
+# Hide context
+OUT_NOCTX=$(STATUSLINE_SHOW_CONTEXT=false render basic-session.json)
+assert_not_contains "no context bar" "$OUT_NOCTX" "38%"
+
+# Hide diff
+OUT_NODIFF=$(STATUSLINE_SHOW_DIFF=false render basic-session.json)
+assert_not_contains "no diff added" "$OUT_NODIFF" "+127"
+
+# Hide speed
+OUT_NOSPD=$(STATUSLINE_SHOW_SPEED=false render basic-session.json)
+assert_not_contains "no speed" "$OUT_NOSPD" "tok/s"
+
+# Hide cumulative
+cp "$FIXTURES/cumulative-proj.json" "$TEST_CACHE/claude-code-statusline/proj-${_HASH}.json"
+cp "$FIXTURES/cumulative-all.json" "$TEST_CACHE/claude-code-statusline/all.json"
+OUT_NOCUM=$(STATUSLINE_SHOW_CUMULATIVE=false render basic-session.json)
+assert_not_contains "no cumulative proj" "$OUT_NOCUM" "⌂"
+assert_not_contains "no cumulative all" "$OUT_NOCUM" "Σ"
+rm -f "$TEST_CACHE/claude-code-statusline/proj-${_HASH}.json"
+rm -f "$TEST_CACHE/claude-code-statusline/all.json"
+
+# ============================================================
 echo "=== NO_COLOR mode ==="
 # ============================================================
 
