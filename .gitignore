@@ -19,6 +19,7 @@ benchmarks/results/*.md
 
 # Compiled binaries
 engines/go/statusline
+engines/rust/target/
 
 # Cache (local dev)
 .cache/

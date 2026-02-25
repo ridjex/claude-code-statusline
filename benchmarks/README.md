@@ -16,6 +16,7 @@ make bench           # benchmark all available engines
 make bench-bash      # benchmark bash only
 make bench-python    # benchmark python only
 make bench-go        # benchmark Go only
+make bench-rust      # benchmark Rust only
 make profile         # detailed bash subprocess profiling
 ```
 
@@ -52,10 +53,10 @@ This reveals where bash spends time and why alternatives (Python with native JSO
 
 | Engine | Render time | Subprocesses | Notes |
 |--------|-------------|--------------|-------|
-| **Go** | **~11ms** | **0** | Single binary, go-git (pure Go) |
-| Python | 5-15ms | 5-8 | Native JSON/math, only git forks |
+| **Rust** | **~22ms** | **0** | 3MB binary, gix (pure Rust) |
+| Go | ~113ms | 0 | 15MB binary, go-git (pure Go) |
+| Python | ~470ms | 5-8 | Native JSON/math, only git forks |
 | Bash | 30-100ms | 27-35 | jq + bc + git forks |
-| Rust | <1ms | 0 | Zero-cost abstractions (planned) |
 
 ## Results directory
 

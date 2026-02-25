@@ -26,7 +26,7 @@ declare -A ENGINES
 ENGINES[bash]="$ROOT/engines/bash/statusline.sh"
 ENGINES[python]="python3 $ROOT/engines/python/statusline.py"
 ENGINES[go]="$ROOT/engines/go/statusline"
-# ENGINES[rust]="$ROOT/engines/rust/target/release/statusline"
+ENGINES[rust]="$ROOT/engines/rust/target/release/statusline"
 
 # Determine which engines to benchmark
 if [ $# -gt 0 ]; then
@@ -37,7 +37,7 @@ else
   [ -f "$ROOT/engines/bash/statusline.sh" ] && TARGETS+=(bash)
   [ -f "$ROOT/engines/python/statusline.py" ] && command -v python3 &>/dev/null && TARGETS+=(python)
   [ -f "$ROOT/engines/go/statusline" ] && TARGETS+=(go)
-  # [ -f "$ROOT/engines/rust/target/release/statusline" ] && TARGETS+=(rust)
+  [ -f "$ROOT/engines/rust/target/release/statusline" ] && TARGETS+=(rust)
 fi
 
 if [ ${#TARGETS[@]} -eq 0 ]; then

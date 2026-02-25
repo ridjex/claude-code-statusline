@@ -1,4 +1,4 @@
-.PHONY: help install uninstall test test-verbose test-python test-go test-all build-go bench bench-bash bench-python bench-go profile demo check verify diagnose
+.PHONY: help install uninstall test test-verbose test-python test-go test-rust test-all build-go build-rust bench bench-bash bench-python bench-go bench-rust profile demo check verify diagnose
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -34,7 +34,14 @@ build-go: ## Build Go engine binary
 test-go: build-go ## Run engine-agnostic tests against Go engine
 	@./tests/test-engine.sh "engines/go/statusline"
 
-test-all: test test-python test-go ## Run tests for all engines
+build-rust: ## Build Rust engine binary
+	@cd engines/rust && cargo build --release
+	@echo "[ok] Rust engine built: engines/rust/target/release/statusline"
+
+test-rust: build-rust ## Run engine-agnostic tests against Rust engine
+	@./tests/test-engine.sh "engines/rust/target/release/statusline"
+
+test-all: test test-python test-go test-rust ## Run tests for all engines
 
 bench: ## Benchmark all available engines (requires hyperfine)
 	@./benchmarks/bench.sh
@@ -47,6 +54,9 @@ bench-python: ## Benchmark python engine only
 
 bench-go: build-go ## Benchmark Go engine only
 	@./benchmarks/bench.sh go
+
+bench-rust: build-rust ## Benchmark Rust engine only
+	@./benchmarks/bench.sh rust
 
 profile: ## Detailed bash subprocess profiling
 	@./benchmarks/profile-bash.sh

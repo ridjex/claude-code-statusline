@@ -135,17 +135,45 @@ The Go engine produces **byte-identical output** to bash and Python. Verified by
 - **go-git limitations**: No reflog API (stash counted via direct file read), no rev-list equivalent (ahead/behind uses 1000-commit walk cap).
 - **Cumulative stats**: Still delegates to `cumulative-stats.sh` — the bash aggregator has complex file locking not worth reimplementing.
 
-## Chapter 5: Rust Port (Planned)
+## Chapter 5: Rust Port (Shipped)
 
-For maximum performance:
+The Rust engine uses gix (gitoxide) for pure Rust git operations — significantly faster than go-git:
 
-- Zero-copy JSON parsing (serde)
-- Native git (git2-rs / libgit2)
-- Zero-cost abstractions
-- Static binary (~2MB)
-- Expected: <1ms render time
+- Single compiled binary (~3MB, stripped with LTO)
+- serde for JSON parsing (single `from_slice`)
+- gix for native git (zero subprocess, index-worktree diff for dirty check)
+- No clap, no regex, no tokio — minimal dependency tree
+- Measured: **~22ms with git** (13ms without), **5x faster than Go with git**
 
-## Chapter 6: Benchmark Methodology
+### Results
+
+| Metric | Go | Rust | Improvement |
+|--------|------|------|-------------|
+| Render (no git) | ~18ms | ~13ms | 28% faster |
+| Render (with git) | ~113ms | ~22ms | 5.1x faster |
+| Binary size | ~15MB | ~3MB | 5x smaller |
+| Git library | go-git (pure Go) | gix (pure Rust) | Much faster dirty check |
+| Dependencies | go-git pulls crypto/ssh | gix minimal features | Smaller tree |
+
+The Rust engine produces **byte-identical output** to all other engines. Verified by the engine-agnostic test suite (76 assertions).
+
+### Key tradeoffs
+
+- **gix API**: No high-level ahead/behind — uses manual revwalk (same cap as Go: 1000 commits).
+- **gix stash**: No stash API — reads `logs/refs/stash` directly (same approach as Go).
+- **Cumulative stats**: Still delegates to `cumulative-stats.sh` for background aggregation.
+- **unsafe**: Uses `libc::setpgid` for background job detachment (same pattern as Go's `syscall.SysProcAttr`).
+
+## Chapter 6: Performance Summary
+
+| Engine | Subprocesses | Render (no git) | Render (with git) | Binary size |
+|--------|:----------:|:---------:|:---------:|:--------:|
+| Bash | 27-35 | — | 30-100ms | — |
+| Python | 5-8 | — | ~470ms | — |
+| Go | 0 | ~18ms | ~113ms | ~15MB |
+| **Rust** | **0** | **~13ms** | **~22ms** | **~3MB** |
+
+## Chapter 7: Benchmark Methodology
 
 We use [hyperfine](https://github.com/sharkdp/hyperfine) for fair comparison:
 
@@ -162,7 +190,7 @@ make profile            # detailed subprocess timing
 - **Git**: Real repo (actual git subprocess costs)
 - **Output**: JSON + Markdown results
 
-## Chapter 7: Lessons Learned
+## Chapter 8: Lessons Learned
 
 1. **Bash is great for orchestration, terrible for data processing.** If you're calling jq more than 3 times, consider a different language.
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Claude Code Status Line — Installer
 # Idempotent: safe to run on fresh install, upgrade, or to fix broken config.
-# Auto-detects the best available engine (go > python > bash).
+# Auto-detects the best available engine (rust > go > python > bash).
 
 set -euo pipefail
 
@@ -33,10 +33,9 @@ echo "[ok] Directories ready"
 
 # --- Engine detection ---
 detect_engine() {
-  # Future: check for compiled binaries first
-  # if [ -f "$SCRIPT_DIR/engines/rust/target/release/statusline" ]; then
-  #   echo "rust"; return
-  # fi
+  if [ -f "$SCRIPT_DIR/engines/rust/target/release/statusline" ]; then
+    echo "rust"; return
+  fi
   if [ -f "$SCRIPT_DIR/engines/go/statusline" ]; then
     echo "go"; return
   fi
@@ -58,6 +57,20 @@ done
 
 # --- Install engine ---
 case "$ENGINE" in
+  rust)
+    cp "$SCRIPT_DIR/engines/rust/target/release/statusline" "$DEST_DIR/statusline-rust"
+    chmod +x "$DEST_DIR/statusline-rust"
+    # Wrapper so settings.json command stays the same (~/.claude/statusline.sh)
+    cat > "$DEST_DIR/statusline.sh" <<'WRAPPER'
+#!/bin/bash
+exec ~/.claude/statusline-rust "$@"
+WRAPPER
+    chmod +x "$DEST_DIR/statusline.sh"
+    # cumulative-stats.sh still needed (called by rust engine for background jobs)
+    cp "$SCRIPT_DIR/engines/bash/cumulative-stats.sh" "$DEST_DIR/cumulative-stats.sh"
+    chmod +x "$DEST_DIR/cumulative-stats.sh"
+    echo "[ok] Rust engine installed (with bash wrapper)"
+    ;;
   go)
     cp "$SCRIPT_DIR/engines/go/statusline" "$DEST_DIR/statusline-go"
     chmod +x "$DEST_DIR/statusline-go"
@@ -134,6 +147,12 @@ if [ -f "$SETTINGS" ]; then
 else
   printf '{\"statusLine\":%s}\n' "$SL_CONFIG" | jq . > "$SETTINGS"
   echo "[ok] Created $SETTINGS"
+fi
+
+# Write version file (if VERSION exists in tarball)
+if [ -f "$SCRIPT_DIR/VERSION" ]; then
+  cp "$SCRIPT_DIR/VERSION" "$DEST_DIR/statusline.version"
+  echo "[ok] Version: $(cat "$DEST_DIR/statusline.version")"
 fi
 
 # Install Claude Code skill (for /statusline command)

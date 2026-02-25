@@ -7,8 +7,9 @@ metadata:
 
 # Claude Code Status Line Manager
 
-Multi-engine status bar for Claude Code. Ships with Go, Python, and Bash engines.
-The installer auto-detects the best available engine (go > python > bash).
+Multi-engine status bar for Claude Code. Ships with Rust, Go, Python, and Bash engines.
+The installer auto-detects the best available engine (rust > go > python > bash).
+Rust engine: ~22ms with git, 3MB binary. Go engine: ~113ms, 15MB binary.
 
 ## Quick Reference
 

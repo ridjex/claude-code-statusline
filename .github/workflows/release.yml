@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-go:
+    strategy:
+      matrix:
+        include:
+          - goos: darwin
+            goarch: arm64
+            runner: macos-latest
+          - goos: darwin
+            goarch: amd64
+            runner: macos-latest
+          - goos: linux
+            goarch: amd64
+            runner: ubuntu-latest
+          - goos: linux
+            goarch: arm64
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache-dependency-path: engines/go/go.sum
+
+      - name: Build Go binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+        run: |
+          cd engines/go
+          go build -ldflags="-s -w" -o statusline ./cmd/statusline
+
+      - name: Upload Go binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: engines/go/statusline
+
+  build-rust:
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            runner: macos-latest
+            platform: darwin-arm64
+          - target: x86_64-apple-darwin
+            runner: macos-latest
+            platform: darwin-amd64
+          - target: x86_64-unknown-linux-musl
+            runner: ubuntu-latest
+            platform: linux-amd64
+          - target: aarch64-unknown-linux-musl
+            runner: ubuntu-latest
+            platform: linux-arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-musl'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu musl-tools
+
+      - name: Install musl tools (Linux AMD64)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            engines/rust/target
+          key: release-cargo-${{ matrix.target }}-${{ hashFiles('engines/rust/Cargo.lock') }}
+
+      - name: Build Rust binary
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
+        run: |
+          cd engines/rust
+          cargo build --release --target ${{ matrix.target }}
+          cp target/${{ matrix.target }}/release/statusline statusline
+
+      - name: Upload Rust binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-${{ matrix.platform }}
+          path: engines/rust/statusline
+
+  release:
+    needs: [build-go, build-rust]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Assemble tarballs
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          echo "$TAG" > VERSION
+
+          for platform in darwin-arm64 darwin-amd64 linux-amd64 linux-arm64; do
+            # Map platform to Go artifact name
+            case "$platform" in
+              darwin-arm64) GO_ART="go-darwin-arm64" ;;
+              darwin-amd64) GO_ART="go-darwin-amd64" ;;
+              linux-amd64)  GO_ART="go-linux-amd64" ;;
+              linux-arm64)  GO_ART="go-linux-arm64" ;;
+            esac
+
+            DIR="claude-code-statusline-${TAG}-${platform}"
+            mkdir -p "$DIR/engines/bash" "$DIR/engines/python" "$DIR/engines/go" "$DIR/engines/rust" "$DIR/skill"
+
+            # Common files
+            cp engines/bash/statusline.sh "$DIR/engines/bash/"
+            cp engines/bash/cumulative-stats.sh "$DIR/engines/bash/"
+            cp engines/bash/statusline.env.default "$DIR/engines/bash/"
+            cp engines/python/statusline.py "$DIR/engines/python/"
+            cp skill/SKILL.md "$DIR/skill/"
+            cp install.sh "$DIR/"
+            cp VERSION "$DIR/"
+
+            # Platform binaries
+            cp "artifacts/${GO_ART}/statusline" "$DIR/engines/go/statusline"
+            chmod +x "$DIR/engines/go/statusline"
+
+            cp "artifacts/rust-${platform}/statusline" "$DIR/engines/rust/statusline"
+            chmod +x "$DIR/engines/rust/statusline"
+
+            tar czf "${DIR}.tar.gz" "$DIR"
+          done
+
+          # Generate checksums
+          sha256sum claude-code-statusline-${TAG}-*.tar.gz > checksums.txt
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --generate-notes \
+            claude-code-statusline-${TAG}-*.tar.gz \
+            checksums.txt

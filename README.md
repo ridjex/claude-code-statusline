@@ -14,18 +14,28 @@ Rich terminal status bar for Claude Code sessions — model usage, context windo
 
 ## Install
 
+### One-line install (recommended)
+
+Downloads pre-built binaries for your platform:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ridjex/claude-code-statusline/main/install-remote.sh | bash
+```
+
+### From source
+
 ```bash
 brew install jq                    # bc and git are pre-installed on macOS
 
 git clone https://github.com/ridjex/claude-code-statusline.git
 cd claude-code-statusline
-make install                       # auto-detects best engine (go > python > bash)
+make install                       # auto-detects best engine (rust > go > python > bash)
 ```
 
-Verify it works (run inside any git repo):
+### Verify
 
 ```bash
-make verify
+make verify                        # or: ~/.claude/statusline.sh --help
 ```
 
 Then open a new Claude Code session.
@@ -42,14 +52,14 @@ The statusline ships with multiple engine implementations. The installer auto-de
 
 | Engine | Status | Subprocesses | Render time | Requirements |
 |--------|--------|-------------|-------------|--------------|
-| **Go** | Stable | 0 (hot path) | ~11ms | go 1.23+ (compiled binary) |
-| **Python** | Stable | 5-8 (git only) | 5-15ms | python3 (stdlib only) |
+| **Rust** | Stable | 0 | ~22ms | rustc 1.70+ (3MB binary) |
+| **Go** | Stable | 0 (hot path) | ~113ms | go 1.23+ (15MB binary) |
+| **Python** | Stable | 5-8 (git only) | ~470ms | python3 (stdlib only) |
 | **Bash** | Stable | 27-35 (jq+bc+git) | 30-100ms | jq, bc, git |
-| Rust | Planned | 0 | <1ms | — |
 
 All engines produce **identical output** for the same input. The engine-agnostic test suite verifies this.
 
-`~/.claude/statusline.sh` is always the entry point. For Python, it's a thin wrapper that calls `statusline.py`. Users never need to know which engine is running.
+`~/.claude/statusline.sh` is always the entry point. For Go/Rust/Python, it's a thin wrapper that calls the engine binary. Users never need to know which engine is running.
 
 ## Configuration
 
@@ -100,11 +110,17 @@ Config precedence: **CLI args > env vars > `~/.claude/statusline.env` > defaults
 make                  # show all targets
 make test             # run bash engine tests (80 assertions)
 make test-python      # run engine-agnostic tests against Python
-make test-all         # run all engine tests
+make test-go          # build + run engine-agnostic tests against Go
+make test-rust        # build + run engine-agnostic tests against Rust
+make test-all         # run all four engine test suites
 make test-verbose     # shows rendered output for each scenario
+make build-go         # build Go binary (engines/go/statusline)
+make build-rust       # build Rust binary (engines/rust/target/release/statusline)
 make bench            # benchmark all engines (requires hyperfine)
 make bench-bash       # benchmark bash only
 make bench-python     # benchmark python only
+make bench-go         # benchmark Go only
+make bench-rust       # benchmark Rust only
 make profile          # detailed bash subprocess profiling
 make demo             # regenerate demo SVGs
 make check            # verify dependencies
@@ -166,7 +182,7 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
                         └── cumulative-stats.sh → update cost caches
 ```
 
-- Render: ~5-15ms (Python) / ~30-100ms (Bash)
+- Render: ~22ms (Rust) / ~113ms (Go) / ~470ms (Python) / ~30-100ms (Bash)
 - Background model parse: ~50-100ms
 - Background cost scan: ~2-14s (depends on transcript volume, cached 5min)
 
@@ -174,7 +190,9 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
 
 ```
 ~/.claude/
-  statusline.sh          # entry point (wrapper for python, or bash engine directly)
+  statusline.sh          # entry point (wrapper for engine binary, or bash directly)
+  statusline-rust        # rust engine binary (if installed)
+  statusline-go          # go engine binary (if installed)
   statusline.py          # python engine (if installed)
   cumulative-stats.sh    # background cost aggregator
 
@@ -228,8 +246,8 @@ claude-code-statusline/
     python/                  # v2 — python engine
       statusline.py           # single-file renderer (stdlib only)
       pyproject.toml          # project metadata
-    go/                      # v3 — planned
-    rust/                    # v4 — planned
+    go/                      # v3 — Go engine (go-git, zero subprocess)
+    rust/                    # v4 — Rust engine (gix/gitoxide, zero subprocess)
   benchmarks/
     bench.sh                 # hyperfine engine comparison
     profile-bash.sh          # detailed subprocess profiling
