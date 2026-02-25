@@ -1,0 +1,27 @@
+{
+  "cwd": "/tmp/statusline-test-project",
+  "session_id": "test-session-long-branch",
+  "model": {
+    "id": "claude-sonnet-4-5",
+    "display_name": "Claude Sonnet 4.5"
+  },
+  "context_window": {
+    "used_percentage": 10,
+    "remaining_percentage": 90,
+    "context_window_size": 200000,
+    "total_input_tokens": 5000,
+    "total_output_tokens": 1000
+  },
+  "cost": {
+    "total_cost_usd": 0.50,
+    "total_duration_ms": 120000,
+    "total_api_duration_ms": 60000,
+    "total_lines_added": 5,
+    "total_lines_removed": 2
+  },
+  "version": "2.1.50",
+  "workspace": {
+    "project_dir": "/tmp/statusline-test-project",
+    "current_dir": "/tmp/statusline-test-project"
+  }
+}

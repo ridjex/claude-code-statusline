@@ -342,6 +342,61 @@ else
 fi
 
 # ============================================================
+# Boundary values
+# ============================================================
+echo "=== Boundary values ==="
+
+# Extreme tokens (>1M input, >$1000 cost, >4h duration)
+OUT=$(render extreme-tokens.json)
+$VERBOSE && echo "$OUT"
+assert_contains "extreme: million tokens" "$OUT" "1.5M"
+assert_contains "extreme: high cost" "$OUT" '$1.8k'
+assert_contains "extreme: 4h duration" "$OUT" "4h0m"
+assert_contains "extreme: 15k lines added" "$OUT" "+15000"
+assert_contains "extreme: 8k lines removed" "$OUT" "-8000"
+assert_contains "extreme: 99% context" "$OUT" "99%"
+
+# Zero session (all zeroes)
+OUT=$(render zero-session.json)
+$VERBOSE && echo "$OUT"
+assert_contains "zero: has model" "$OUT" "Haiku"
+assert_contains "zero: 0% context" "$OUT" "0%"
+assert_contains "zero: cost zero" "$OUT" '$0.00'
+assert_contains "zero: duration zero" "$OUT" "0m"
+
+# ============================================================
+# Stderr silence
+# ============================================================
+echo "=== Stderr silence ==="
+
+# Normal input should produce no stderr
+STDERR=$(render basic-session.json 2>&1 >/dev/null || true)
+if [ -z "$STDERR" ]; then
+  PASS=$((PASS + 1))
+else
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: basic-session produced stderr: $STDERR"
+fi
+
+# Empty input should produce no stderr
+STDERR=$(echo '{}' | XDG_CACHE_HOME="$TEST_CACHE" $ENGINE 2>&1 >/dev/null || true)
+if [ -z "$STDERR" ]; then
+  PASS=$((PASS + 1))
+else
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: empty input produced stderr: $STDERR"
+fi
+
+# Invalid JSON should produce no stderr
+STDERR=$(echo '{bad' | XDG_CACHE_HOME="$TEST_CACHE" $ENGINE 2>&1 >/dev/null || true)
+if [ -z "$STDERR" ]; then
+  PASS=$((PASS + 1))
+else
+  FAIL=$((FAIL + 1))
+  echo "  FAIL: invalid JSON produced stderr: $STDERR"
+fi
+
+# ============================================================
 # Summary
 # ============================================================
 echo ""

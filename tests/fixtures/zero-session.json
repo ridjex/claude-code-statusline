@@ -1,0 +1,24 @@
+{
+  "cwd": "/tmp",
+  "session_id": "test-session-zero",
+  "model": {
+    "id": "claude-haiku-4-5",
+    "display_name": "Claude Haiku 4.5"
+  },
+  "context_window": {
+    "used_percentage": 0,
+    "remaining_percentage": 100,
+    "context_window_size": 200000,
+    "total_input_tokens": 0,
+    "total_output_tokens": 0
+  },
+  "cost": {
+    "total_cost_usd": 0,
+    "total_duration_ms": 0,
+    "total_api_duration_ms": 0,
+    "total_lines_added": 0,
+    "total_lines_removed": 0
+  },
+  "version": "2.1.50",
+  "workspace": {}
+}
