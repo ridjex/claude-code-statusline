@@ -41,9 +41,11 @@ type Session struct {
 	TranscriptPath string        `json:"transcript_path"`
 }
 
+const maxStdinSize = 1 << 20 // 1 MB
+
 func Parse(r io.Reader) Session {
 	var s Session
-	data, err := io.ReadAll(r)
+	data, err := io.ReadAll(io.LimitReader(r, maxStdinSize))
 	if err != nil {
 		return s
 	}

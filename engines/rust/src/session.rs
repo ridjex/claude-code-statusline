@@ -67,9 +67,11 @@ pub struct Session {
     pub transcript_path: String,
 }
 
-pub fn parse(mut reader: impl Read) -> Session {
+const MAX_STDIN_SIZE: u64 = 1 << 20; // 1 MB
+
+pub fn parse(reader: impl Read) -> Session {
     let mut buf = Vec::new();
-    if reader.read_to_end(&mut buf).is_err() {
+    if reader.take(MAX_STDIN_SIZE).read_to_end(&mut buf).is_err() {
         return Session::default();
     }
     serde_json::from_slice(&buf).unwrap_or_default()

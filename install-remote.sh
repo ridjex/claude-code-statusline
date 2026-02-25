@@ -70,19 +70,27 @@ curl -fSL -o "$WORK_DIR/$TARBALL" "$URL"
 
 # Verify checksum
 echo "Verifying checksum..."
-curl -fsSL -o "$WORK_DIR/checksums.txt" "$CHECKSUM_URL"
+if ! curl -fsSL -o "$WORK_DIR/checksums.txt" "$CHECKSUM_URL"; then
+  echo "Failed to download checksums.txt — check that release $VERSION exists"
+  exit 1
+fi
 
 cd "$WORK_DIR"
+if ! grep -q "$TARBALL" checksums.txt; then
+  echo "Checksum entry not found for $TARBALL in checksums.txt"
+  exit 1
+fi
+
 if command -v sha256sum &>/dev/null; then
   grep "$TARBALL" checksums.txt | sha256sum -c - || {
-    echo "Checksum verification FAILED"
+    echo "Checksum verification FAILED — the download may be corrupted, try again"
     exit 1
   }
 elif command -v shasum &>/dev/null; then
   EXPECTED=$(grep "$TARBALL" checksums.txt | awk '{print $1}')
   ACTUAL=$(shasum -a 256 "$TARBALL" | awk '{print $1}')
   if [ "$EXPECTED" != "$ACTUAL" ]; then
-    echo "Checksum verification FAILED"
+    echo "Checksum verification FAILED — the download may be corrupted, try again"
     echo "  Expected: $EXPECTED"
     echo "  Actual:   $ACTUAL"
     exit 1

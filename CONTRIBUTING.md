@@ -1,49 +1,61 @@
 # Contributing
 
+## Prerequisites
+
+- **Required**: git, make, bash 3.2+, jq, bc
+- **Go engine**: Go 1.23+
+- **Rust engine**: Rust 1.75+ (stable)
+- **Python engine**: Python 3.8+
+
 ## Setup
 
 ```bash
 git clone https://github.com/ridjex/claude-code-statusline.git
 cd claude-code-statusline
-make check            # verify dependencies
+make check       # verify dependencies
+make test-all    # run all engine tests
 ```
 
-## Development
+## Development Workflow
+
+1. Fork the repo and create a feature branch
+2. Make changes
+3. Run `make test-all` — all engines must pass
+4. Submit a PR against `main`
+
+## Engine Parity
+
+All 4 engines (bash, python, go, rust) must produce **byte-identical ANSI output** for the same input. If you change the output format in one engine, update all four.
+
+The engine-agnostic test suite (`tests/test-engine.sh`) enforces this — it runs the same 76 assertions against every engine.
+
+## Adding a New Section
+
+See the [checklist in CLAUDE.md](CLAUDE.md#adding-a-new-section).
+
+## Testing
 
 ```bash
-make                  # show all targets
-make test             # run all tests
-make test-verbose     # verbose — shows rendered output
-make demo             # regenerate demo SVGs after output changes
+make test          # bash engine (80 assertions)
+make test-python   # python engine (76 assertions)
+make test-go       # go engine (76 assertions)
+make test-rust     # rust engine (76 assertions)
+make test-all      # all four
 ```
 
 Tests use mock JSON fixtures in `tests/fixtures/`. No external services or Claude Code session needed.
 
-## Adding a test
+When adding new features, add test assertions to both:
+- `tests/run-tests.sh` (bash-specific tests)
+- `tests/test-engine.sh` (engine-agnostic, runs against all)
 
-1. Create a fixture in `tests/fixtures/` (JSON matching Claude Code's statusline payload)
-2. Add assertions in `tests/run-tests.sh` using `assert_contains` / `assert_not_contains`
-3. Run `make test` to verify
+## Code Style
 
-## Changing output format
+- **Bash**: No `set -e`, POSIX-compatible beyond arrays, errors are silent
+- **Python**: stdlib only, no external dependencies
+- **Go**: `go fmt`, standard library style
+- **Rust**: `cargo fmt`, `cargo clippy` clean
 
-1. Edit `src/statusline.sh`
-2. Run `make test` — update assertions if needed
-3. Run `make demo` — regenerate demo SVGs
-4. CI verifies SVGs are up to date (`demo-freshness` job)
+## Questions?
 
-## Adding a config option
-
-1. Add `STATUSLINE_SHOW_X=true` to `src/statusline.env.default`
-2. Wrap section in `if _show "${STATUSLINE_SHOW_X:-}"; then ... fi`
-3. Add test: `STATUSLINE_SHOW_X=false render basic-session.json`
-4. Update `skill/SKILL.md` config table
-5. Update `README.md` Configuration section
-
-## Code style
-
-- Shell scripts follow POSIX-compatible bash
-- No external dependencies beyond `jq`, `bc`, `git`
-- Keep render path fast (< 10ms) — expensive work goes in background jobs
-- Config via env vars sourced from `~/.claude/statusline.env`
-- No `set -e` in statusline.sh — must never crash Claude Code
+Open a [discussion](https://github.com/ridjex/claude-code-statusline/discussions) or file an issue.
