@@ -1,4 +1,4 @@
-.PHONY: help install uninstall test test-verbose test-python test-go test-rust test-all build-go build-rust bench bench-bash bench-python bench-go bench-rust bench-report profile demo check verify diagnose
+.PHONY: help install uninstall test test-verbose test-python test-go test-rust test-all test-git-go test-git-python build-go build-rust bench bench-bash bench-python bench-go bench-rust bench-report profile demo check verify diagnose
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -41,10 +41,16 @@ build-rust: ## Build Rust engine binary
 test-rust: build-rust ## Run engine-agnostic tests against Rust engine
 	@./tests/test-engine.sh "engines/rust/target/release/statusline"
 
+test-git-go: build-go ## Run git integration tests against Go engine
+	@./tests/test-git-integration.sh "engines/go/statusline"
+
+test-git-python: ## Run git integration tests against Python engine
+	@./tests/test-git-integration.sh "python3 engines/python/statusline.py"
+
 test-parity: build-go build-rust ## Verify all engines produce identical output
 	@./tests/test-parity.sh
 
-test-all: test test-python test-go test-rust test-parity ## Run tests for all engines
+test-all: test test-python test-go test-rust test-parity test-git-go test-git-python ## Run tests for all engines
 
 bench: ## Benchmark all available engines (requires hyperfine)
 	@./benchmarks/bench.sh

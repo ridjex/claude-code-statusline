@@ -135,6 +135,82 @@ jobs:
       - name: Run engine-agnostic tests (Rust)
         run: ./tests/test-engine.sh "engines/rust/target/release/statusline"
 
+  test-git-integration:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install jq
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache-dependency-path: engines/go/go.sum
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Build Go binary
+        run: cd engines/go && go build -o statusline ./cmd/statusline
+
+      - name: Git integration tests (Go)
+        run: ./tests/test-git-integration.sh "engines/go/statusline"
+
+      - name: Git integration tests (Python)
+        run: ./tests/test-git-integration.sh "python3 engines/python/statusline.py"
+
+  test-install:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y jq bc
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install jq
+
+      - name: Create ~/.claude directory
+        run: mkdir -p ~/.claude
+
+      - name: Run install.sh
+        run: ./install.sh
+
+      - name: Verify statusline.sh exists and is executable
+        run: test -x ~/.claude/statusline.sh
+
+      - name: Verify settings.json has statusLine config
+        run: |
+          jq -e '.statusLine.type == "command"' ~/.claude/settings.json
+          jq -e '.statusLine.command' ~/.claude/settings.json
+
+      - name: Smoke test render
+        run: |
+          echo '{"model":{"display_name":"Test"},"context_window":{"used_percentage":50,"total_input_tokens":1000,"total_output_tokens":200},"cost":{"total_cost_usd":0.5,"total_duration_ms":60000,"total_api_duration_ms":30000}}' \
+            | ~/.claude/statusline.sh
+
+      - name: Test uninstall
+        run: |
+          ./install.sh --uninstall
+          ! test -f ~/.claude/statusline.sh
+
   output-parity:
     runs-on: ubuntu-latest
     steps:
