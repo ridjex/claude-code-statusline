@@ -49,9 +49,9 @@ cargo build --release
 ## Test
 
 ```bash
-# Engine-agnostic test suite (76 assertions)
-./tests/test-engine.sh "engines/rust/target/release/statusline"
+# Unit tests (30+ assertions in format.rs)
+cd engines/rust && cargo test
 
-# Or via Makefile
+# Engine-agnostic integration tests (89 assertions)
 make test-rust
 ```
