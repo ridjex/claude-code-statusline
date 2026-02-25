@@ -121,6 +121,7 @@ make bench-bash       # benchmark bash only
 make bench-python     # benchmark python only
 make bench-go         # benchmark Go only
 make bench-rust       # benchmark Rust only
+make bench-report     # run benchmarks + generate RESULTS.md
 make profile          # detailed bash subprocess profiling
 make demo             # regenerate demo SVGs
 make check            # verify dependencies
@@ -182,7 +183,7 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
                         └── cumulative-stats.sh → update cost caches
 ```
 
-- Render: ~6ms (Rust) / ~80ms (Go) / ~155ms (Bash) / ~400ms (Python)
+- Render: ~6ms (Rust) / ~80ms (Go) / ~155ms (Bash) / ~400ms (Python) — [full benchmarks](benchmarks/RESULTS.md)
 - Background model parse: ~50-100ms
 - Background cost scan: ~2-14s (depends on transcript volume, cached 5min)
 
@@ -250,8 +251,10 @@ claude-code-statusline/
     rust/                    # v4 — Rust engine (gix/gitoxide, zero subprocess)
   benchmarks/
     bench.sh                 # hyperfine engine comparison
+    generate-report.sh       # RESULTS.md generator
     profile-bash.sh          # detailed subprocess profiling
-    results/                 # benchmark output (gitignored)
+    RESULTS.md               # auto-generated benchmark report (committed by CI)
+    results/                 # raw hyperfine output (gitignored)
   tests/
     run-tests.sh             # bash-specific test runner
     test-engine.sh           # engine-agnostic test runner

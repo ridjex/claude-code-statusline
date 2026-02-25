@@ -236,8 +236,62 @@ jobs:
             tests/test-parity.sh \
             scripts/generate-demo.sh \
             benchmarks/bench.sh \
+            benchmarks/generate-report.sh \
             benchmarks/profile-bash.sh \
             || true
+
+  benchmark:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y jq bc hyperfine
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache-dependency-path: engines/go/go.sum
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            engines/rust/target
+          key: bench-cargo-${{ hashFiles('engines/rust/Cargo.lock') }}
+
+      - name: Build engines
+        run: |
+          cd engines/go && go build -o statusline ./cmd/statusline && cd ../..
+          cd engines/rust && cargo build --release && cd ../..
+
+      - name: Run benchmarks
+        run: ./benchmarks/bench.sh --ci
+
+      - name: Commit updated results (if changed)
+        run: |
+          git diff --quiet benchmarks/RESULTS.md && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add benchmarks/RESULTS.md
+          git commit -m "bench: update benchmark results"
+          git push
 
   demo-update:
     if: github.event_name == 'pull_request'

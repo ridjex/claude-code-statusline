@@ -1,4 +1,4 @@
-.PHONY: help install uninstall test test-verbose test-python test-go test-rust test-all build-go build-rust bench bench-bash bench-python bench-go bench-rust profile demo check verify diagnose
+.PHONY: help install uninstall test test-verbose test-python test-go test-rust test-all build-go build-rust bench bench-bash bench-python bench-go bench-rust bench-report profile demo check verify diagnose
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -60,6 +60,9 @@ bench-go: build-go ## Benchmark Go engine only
 
 bench-rust: build-rust ## Benchmark Rust engine only
 	@./benchmarks/bench.sh rust
+
+bench-report: build-go build-rust ## Run benchmarks and generate RESULTS.md
+	@./benchmarks/bench.sh --ci
 
 profile: ## Detailed bash subprocess profiling
 	@./benchmarks/profile-bash.sh

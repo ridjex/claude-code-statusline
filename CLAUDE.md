@@ -44,6 +44,8 @@ engines/
 | `tests/test-engine.sh` | Engine-agnostic test runner (76 assertions). |
 | `tests/fixtures/` | Shared mock JSON payloads for all engines. |
 | `benchmarks/bench.sh` | Hyperfine-based engine comparison. |
+| `benchmarks/generate-report.sh` | Generates RESULTS.md from hyperfine JSON. |
+| `benchmarks/RESULTS.md` | Auto-generated benchmark report (committed by CI). |
 | `benchmarks/profile-bash.sh` | Detailed bash subprocess profiling. |
 | `install-remote.sh` | Remote installer. Downloads pre-built binaries from GitHub Releases. |
 | `.github/workflows/release.yml` | Release workflow. Builds 4-platform binaries on `v*` tags. |
@@ -65,6 +67,7 @@ make bench-bash     # benchmark bash only
 make bench-python   # benchmark python only
 make bench-go       # benchmark Go only
 make bench-rust     # benchmark Rust only
+make bench-report   # run benchmarks + generate RESULTS.md
 make profile        # detailed bash subprocess profiling
 make verify         # smoke test installed version
 make diagnose       # check installation health
