@@ -36,7 +36,7 @@ pub fn get(cwd: &str) -> Option<GitState> {
     state.dirty = check_dirty(&repo);
 
     // Ahead/behind
-    let head_commit = head.peel_to_commit_in_place().ok()?;
+    let head_commit = head.peel_to_commit().ok()?;
     let head_id = head_commit.id;
     let (ahead, behind) = get_ahead_behind(&repo, head_id, &state.branch);
     state.ahead = ahead;
@@ -152,13 +152,13 @@ fn count_commits(repo: &gix::Repository, from: gix::ObjectId, to: gix::ObjectId)
 fn detect_worktree(repo: &gix::Repository, state: &mut GitState) {
     // Check if this is a linked worktree
     let kind = repo.kind();
-    let is_linked = matches!(kind, gix::repository::Kind::WorkTree { is_linked: true });
+    let is_linked = matches!(kind, gix::repository::Kind::LinkedWorkTree);
 
     if is_linked {
         state.in_worktree = true;
 
         // Try to extract worktree name from the worktree path
-        if let Some(work_dir) = repo.work_dir() {
+        if let Some(work_dir) = repo.workdir() {
             let toplevel = work_dir.to_string_lossy().to_string();
             let toplevel = toplevel.trim_end_matches('/');
 
