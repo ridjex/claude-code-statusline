@@ -11,8 +11,74 @@ CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-code-statusline"
 SETTINGS="$DEST_DIR/settings.json"
 SL_CONFIG='{"type":"command","command":"~/.claude/statusline.sh","padding":0}'
 
+# --- Uninstall mode ---
+if [ "${1:-}" = "--uninstall" ]; then
+  echo "Claude Code Status Line — Uninstaller"
+  echo ""
+
+  SL_FILES=(
+    "$DEST_DIR/statusline.sh"
+    "$DEST_DIR/statusline-go"
+    "$DEST_DIR/statusline-rust"
+    "$DEST_DIR/statusline.py"
+    "$DEST_DIR/cumulative-stats.sh"
+    "$DEST_DIR/statusline.version"
+    "$DEST_DIR/statusline.sh.bak"
+    "$DEST_DIR/statusline.py.bak"
+    "$DEST_DIR/cumulative-stats.sh.bak"
+  )
+
+  # Remove statusLine from settings.json
+  if [ -f "$SETTINGS" ] && jq -e '.statusLine' "$SETTINGS" &>/dev/null; then
+    cp "$SETTINGS" "$SETTINGS.bak"
+    jq 'del(.statusLine)' "$SETTINGS" > "$SETTINGS.tmp" && mv "$SETTINGS.tmp" "$SETTINGS"
+    echo "[ok] Removed statusLine from settings.json"
+  else
+    echo "[--] settings.json: no statusLine key found"
+  fi
+
+  # Remove files
+  removed=0
+  for f in "${SL_FILES[@]}"; do
+    if [ -f "$f" ]; then
+      rm "$f"
+      echo "[ok] Removed $f"
+      removed=$((removed + 1))
+    fi
+  done
+
+  # Remove skill
+  if [ -d "$DEST_DIR/skills/statusline" ]; then
+    rm -rf "$DEST_DIR/skills/statusline"
+    echo "[ok] Removed skill directory"
+    removed=$((removed + 1))
+  fi
+
+  # Remove cache
+  if [ -d "$CACHE_DIR" ]; then
+    rm -rf "$CACHE_DIR"
+    echo "[ok] Removed cache directory"
+    removed=$((removed + 1))
+  fi
+
+  echo ""
+  if [ "$removed" -gt 0 ]; then
+    echo "Uninstalled ($removed items removed)"
+  else
+    echo "Nothing to remove — statusline was not installed"
+  fi
+  echo "Note: ~/.claude/statusline.env preserved (your config)"
+  exit 0
+fi
+
 echo "Claude Code Status Line — Installer"
 echo ""
+
+# Verify write access
+if [ -d "$DEST_DIR" ] && [ ! -w "$DEST_DIR" ]; then
+  echo "Error: Cannot write to $DEST_DIR — check permissions"
+  exit 1
+fi
 
 # Check dependencies
 missing=()

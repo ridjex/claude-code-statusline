@@ -82,6 +82,9 @@ check: ## Check dependencies (jq, bc, git)
 	done; \
 	$$ok || exit 1
 
+uninstall: ## Remove statusline from ~/.claude
+	@bash install.sh --uninstall
+
 diagnose: ## Check installation health and config
 	@echo "=== Dependencies ==="
 	@for dep in jq bc git; do \
