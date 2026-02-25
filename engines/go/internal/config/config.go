@@ -22,6 +22,7 @@ type Config struct {
 	ShowSpeed      bool
 	ShowCumulative bool
 	NoColor        bool
+	ShowVersion    bool
 	ShowHelp       bool
 
 	InternalRefreshModels  bool
@@ -108,6 +109,7 @@ func Load(args []string) Config {
 	noSpeed := fs.Bool("no-speed", false, "")
 	noCumulative := fs.Bool("no-cumulative", false, "")
 	noColor := fs.Bool("no-color", false, "")
+	version := fs.Bool("version", false, "")
 	help := fs.Bool("help", false, "")
 	internalRefresh := fs.Bool("internal-refresh-models", false, "")
 	sessionID := fs.String("session-id", "", "")
@@ -150,6 +152,9 @@ func Load(args []string) Config {
 	}
 	if *noColor {
 		cfg.NoColor = true
+	}
+	if *version {
+		cfg.ShowVersion = true
 	}
 	if *help {
 		cfg.ShowHelp = true

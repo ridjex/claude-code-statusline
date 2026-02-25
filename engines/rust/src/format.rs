@@ -68,6 +68,9 @@ pub fn shorten_branch(name: &str) -> String {
 
 /// Truncate to max_len runes with ellipsis.
 pub fn truncate(s: &str, max_len: usize) -> String {
+    if max_len == 0 {
+        return String::new();
+    }
     let chars: Vec<char> = s.chars().collect();
     if chars.len() > max_len {
         let mut result: String = chars[..max_len - 1].iter().collect();

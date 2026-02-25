@@ -19,6 +19,15 @@ fn main() {
         let args: Vec<String> = std::env::args().skip(1).collect();
         let cfg = config::load(&args);
 
+        if cfg.show_version {
+            let version = env!("CARGO_PKG_VERSION");
+            let _ = io::Write::write_all(
+                &mut io::stdout(),
+                format!("statusline {} (rust)\n", version).as_bytes(),
+            );
+            return;
+        }
+
         if cfg.show_help {
             print_help();
             return;
@@ -80,6 +89,7 @@ fn print_help() {
           \x20 --no-speed       Hide throughput (tok/s)\n\
           \x20 --no-cumulative  Hide cumulative costs\n\
           \x20 --no-color       Disable ANSI colors\n\
+          \x20 --version        Show version\n\
           \x20 --help           Show this help\n\
           \n\
           Config precedence: CLI args > env vars > ~/.claude/statusline.env > defaults (all on)\n",

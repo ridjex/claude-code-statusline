@@ -19,8 +19,9 @@ stdin JSON → engine → 1-2 lines stdout
 engines/
   bash/     ← v1: 27-35 subprocesses (jq + bc + git)
   python/   ← v2: 5-8 subprocesses (git only, native JSON/math)
-  go/       ← v3: single binary, go-git (pure Go), ~80ms renders
-  rust/     ← v4: single binary, gix/gitoxide (pure Rust), ~6ms renders, ~3MB stripped
+  go/       ← v3: single binary, go-git (pure Go)
+  rust/     ← v4: single binary, gix/gitoxide (pure Rust), ~3MB stripped
+  (see benchmarks/RESULTS.md for current timing data)
 ```
 
 ## Key files

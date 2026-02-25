@@ -1,36 +1,39 @@
-# Go Engine (Planned)
+# Go Engine (v3) — Stable
 
-Status: **Not yet implemented**
+Single compiled binary with zero runtime dependencies. Uses [go-git](https://github.com/go-git/go-git) for pure-Go git operations (no subprocess spawning).
 
-## Design Notes
+## Performance
 
-The Go engine will be a single compiled binary with zero runtime dependencies.
+~10ms renders (vs ~100ms bash, ~480ms python). See [benchmarks/RESULTS.md](../../benchmarks/RESULTS.md) for current numbers.
 
-### Advantages over bash/python
-- Single binary, no interpreter startup
-- Native JSON parsing (encoding/json)
-- Native math (no bc subprocesses)
-- go-git or libgit2 bindings (no git subprocesses)
-- Cross-compilation for linux/darwin/arm64
+## Architecture
 
-### Target architecture
 ```
-cmd/statusline/main.go    # Entry point, CLI args
+cmd/statusline/main.go       # Entry point, CLI args, panic recovery
 internal/
-  config/config.go        # Config loading (env file + args)
-  render/render.go        # ANSI output assembly
-  git/git.go              # Git state (go-git)
-  cache/cache.go          # JSON cache read/write
-  format/format.go        # Number formatting (cost, tokens, duration)
+  config/config.go            # Config loading (env file + CLI args)
+  render/render.go            # ANSI output assembly (Line 1 + Line 2)
+  gitstate/gitstate.go        # Git state via go-git (branch, diff, stash)
+  background/background.go    # Background jobs (model cache, cost scan)
+  session/session.go          # Session/transcript path resolution
+  format/format.go            # Number formatting (cost, tokens, duration)
 ```
 
-### Expected performance
-- Render: ~1-3ms (vs 30-100ms bash, 5-15ms python)
-- Zero subprocesses
-- ~5MB binary size
+## Build
 
-### Build
 ```bash
 cd engines/go
 go build -o statusline ./cmd/statusline
+```
+
+Binary size: ~12MB (includes go-git).
+
+## Test
+
+```bash
+# Unit tests
+cd engines/go && go test ./...
+
+# Integration tests (76 assertions)
+make test-go
 ```

@@ -12,6 +12,9 @@ import (
 	"statusline/internal/session"
 )
 
+// Version is set at build time via -ldflags "-X main.Version=..."
+var Version = "dev"
+
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
@@ -21,6 +24,11 @@ func main() {
 	}()
 
 	cfg := config.Load(os.Args[1:])
+
+	if cfg.ShowVersion {
+		fmt.Fprintf(os.Stdout, "statusline %s (go)\n", Version)
+		return
+	}
 
 	if cfg.ShowHelp {
 		printHelp()
@@ -69,6 +77,7 @@ Options:
   --no-speed       Hide throughput (tok/s)
   --no-cumulative  Hide cumulative costs
   --no-color       Disable ANSI colors
+  --version        Show version
   --help           Show this help
 
 Config precedence: CLI args > env vars > ~/.claude/statusline.env > defaults (all on)

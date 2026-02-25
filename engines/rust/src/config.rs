@@ -16,6 +16,7 @@ pub struct Config {
     pub show_speed: bool,
     pub show_cumulative: bool,
     pub no_color: bool,
+    pub show_version: bool,
     pub show_help: bool,
     pub internal_refresh_models: bool,
     pub internal_session_id: String,
@@ -50,6 +51,7 @@ pub fn load(args: &[String]) -> Config {
         show_speed: true,
         show_cumulative: true,
         no_color: false,
+        show_version: false,
         show_help: false,
         internal_refresh_models: false,
         internal_session_id: String::new(),
@@ -116,6 +118,7 @@ pub fn load(args: &[String]) -> Config {
             "--no-speed" => cfg.show_speed = false,
             "--no-cumulative" => cfg.show_cumulative = false,
             "--no-color" => cfg.no_color = true,
+            "--version" => cfg.show_version = true,
             "--help" => cfg.show_help = true,
             "--internal-refresh-models" => cfg.internal_refresh_models = true,
             "--session-id" => {

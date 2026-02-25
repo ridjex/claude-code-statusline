@@ -42,6 +42,7 @@ def parse_args():
     parser.add_argument("--no-speed", action="store_true")
     parser.add_argument("--no-cumulative", action="store_true")
     parser.add_argument("--no-color", action="store_true")
+    parser.add_argument("--version", action="store_true")
     parser.add_argument("--help", action="store_true")
     return parser.parse_args()
 
@@ -64,6 +65,7 @@ Options:
   --no-speed       Hide throughput (tok/s)
   --no-cumulative  Hide cumulative costs
   --no-color       Disable ANSI colors
+  --version        Show version
   --help           Show this help
 
 Config precedence: CLI args > env vars > ~/.claude/statusline.env > defaults (all on)
@@ -226,6 +228,15 @@ def strip_ansi(text):
 
 def main():
     args = parse_args()
+    if args.version:
+        version = "dev"
+        version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "VERSION")
+        if os.path.isfile(version_file):
+            with open(version_file) as f:
+                version = f.read().strip()
+        sys.stdout.write(f"statusline {version} (python)\n")
+        sys.exit(0)
+
     if args.help:
         print_help()
 

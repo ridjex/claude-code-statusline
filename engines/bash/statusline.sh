@@ -24,6 +24,13 @@ while [ $# -gt 0 ]; do
     --no-speed)       STATUSLINE_SHOW_SPEED=false ;;
     --no-cumulative)  STATUSLINE_SHOW_CUMULATIVE=false ;;
     --no-color)       STATUSLINE_NO_COLOR=true ;;
+    --version)
+      _VERSION="dev"
+      _VF="$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")/../../VERSION"
+      [ -f "$_VF" ] && _VERSION=$(cat "$_VF")
+      echo "statusline $_VERSION (bash)"
+      exit 0
+      ;;
     --help)
       cat >&2 <<'USAGE'
 Usage: statusline.sh [OPTIONS]
@@ -42,6 +49,7 @@ Options:
   --no-speed       Hide throughput (tok/s)
   --no-cumulative  Hide cumulative costs
   --no-color       Disable ANSI colors
+  --version        Show version
   --help           Show this help
 
 Config precedence: CLI args > env vars > ~/.claude/statusline.env > defaults (all on)
@@ -391,7 +399,11 @@ if [ -n "$SESSION_ID" ]; then
     _SDIR=$(dirname "$TRANSCRIPT_PATH")
     _MCF="$_CACHE_DIR/models-${SESSION_ID}.json"
     _FILES="$TRANSCRIPT_PATH"
-    [ -d "$_SDIR/$SESSION_ID/subagents" ] && _FILES="$_FILES $_SDIR/$SESSION_ID/subagents/*.jsonl"
+    if [ -d "$_SDIR/$SESSION_ID/subagents" ]; then
+        for _f in "$_SDIR/$SESSION_ID/subagents"/*.jsonl; do
+            [ -f "$_f" ] && _FILES="$_FILES $_f"
+        done
+    fi
     cat $_FILES 2>/dev/null | jq -rs '
       [.[] | select(.type == "assistant" and .message.model and .message.usage
              and (.message.model | startswith("claude-"))) | .message] |
