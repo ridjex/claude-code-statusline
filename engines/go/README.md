@@ -34,6 +34,6 @@ Binary size: ~12MB (includes go-git).
 # Unit tests
 cd engines/go && go test ./...
 
-# Integration tests (76 assertions)
+# Integration tests (89 assertions)
 make test-go
 ```
