@@ -15,8 +15,6 @@ pub fn fmt_k(n: i64) -> String {
 pub fn fmt_cost(c: f64) -> String {
     if c >= 1000.0 {
         format!("${:.1}k", c / 1000.0)
-    } else if c >= 100.0 {
-        format!("${:.0}", c)
     } else if c >= 10.0 {
         format!("${:.0}", c)
     } else if c >= 1.0 {
@@ -36,20 +34,16 @@ pub fn fmt_duration(ms: i64) -> String {
     }
 }
 
-const BARS: [&str; 8] = ["\u{2581}", "\u{2582}", "\u{2583}", "\u{2584}", "\u{2585}", "\u{2586}", "\u{2587}", "\u{2588}"];
+const BARS: [&str; 8] = [
+    "\u{2581}", "\u{2582}", "\u{2583}", "\u{2584}", "\u{2585}", "\u{2586}", "\u{2587}", "\u{2588}",
+];
 
 /// Return a bar character proportional to val/max (8 levels).
 pub fn bar_char(val: i64, max: i64) -> &'static str {
     if val <= 0 || max <= 0 {
         return "";
     }
-    let mut level = (val * 8 + max / 2) / max;
-    if level < 1 {
-        level = 1;
-    }
-    if level > 8 {
-        level = 8;
-    }
+    let level = ((val * 8 + max / 2) / max).clamp(1, 8);
     BARS[(level - 1) as usize]
 }
 

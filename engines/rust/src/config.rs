@@ -81,7 +81,11 @@ pub fn load(args: &[String]) -> Config {
 
     // Apply merged values
     apply_bool(&merged, "STATUSLINE_SHOW_MODEL", &mut cfg.show_model);
-    apply_bool(&merged, "STATUSLINE_SHOW_MODEL_BARS", &mut cfg.show_model_bars);
+    apply_bool(
+        &merged,
+        "STATUSLINE_SHOW_MODEL_BARS",
+        &mut cfg.show_model_bars,
+    );
     apply_bool(&merged, "STATUSLINE_SHOW_CONTEXT", &mut cfg.show_context);
     apply_bool(&merged, "STATUSLINE_SHOW_COST", &mut cfg.show_cost);
     apply_bool(&merged, "STATUSLINE_SHOW_DURATION", &mut cfg.show_duration);
@@ -90,7 +94,11 @@ pub fn load(args: &[String]) -> Config {
     apply_bool(&merged, "STATUSLINE_LINE2", &mut cfg.line2);
     apply_bool(&merged, "STATUSLINE_SHOW_TOKENS", &mut cfg.show_tokens);
     apply_bool(&merged, "STATUSLINE_SHOW_SPEED", &mut cfg.show_speed);
-    apply_bool(&merged, "STATUSLINE_SHOW_CUMULATIVE", &mut cfg.show_cumulative);
+    apply_bool(
+        &merged,
+        "STATUSLINE_SHOW_CUMULATIVE",
+        &mut cfg.show_cumulative,
+    );
 
     // CLI args (highest priority) — manual parsing, no clap
     let mut i = 0;

@@ -45,7 +45,7 @@ pub fn render(sess: &Session, cfg: &Config) -> String {
     let mut clr = GREEN;
     if cfg.show_context {
         pct = sess.context_window.used_percentage as i32;
-        let filled = (pct / 10).min(10).max(0) as usize;
+        let filled = (pct / 10).clamp(0, 10) as usize;
         let empty = 10 - filled;
         bar = "\u{2593}".repeat(filled) + &"\u{2591}".repeat(empty);
         if pct >= 90 {

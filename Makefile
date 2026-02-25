@@ -41,7 +41,10 @@ build-rust: ## Build Rust engine binary
 test-rust: build-rust ## Run engine-agnostic tests against Rust engine
 	@./tests/test-engine.sh "engines/rust/target/release/statusline"
 
-test-all: test test-python test-go test-rust ## Run tests for all engines
+test-parity: build-go build-rust ## Verify all engines produce identical output
+	@./tests/test-parity.sh
+
+test-all: test test-python test-go test-rust test-parity ## Run tests for all engines
 
 bench: ## Benchmark all available engines (requires hyperfine)
 	@./benchmarks/bench.sh

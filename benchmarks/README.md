@@ -51,12 +51,14 @@ This reveals where bash spends time and why alternatives (Python with native JSO
 
 ## Expected results
 
+Measured with hyperfine (100+ runs, 10 warmup, with git ops):
+
 | Engine | Render time | Subprocesses | Notes |
 |--------|-------------|--------------|-------|
-| **Rust** | **~22ms** | **0** | 3MB binary, gix (pure Rust) |
-| Go | ~113ms | 0 | 15MB binary, go-git (pure Go) |
-| Python | ~470ms | 5-8 | Native JSON/math, only git forks |
-| Bash | 30-100ms | 27-35 | jq + bc + git forks |
+| **Rust** | **~6.5ms** | **0** | 3MB binary, gix (pure Rust) |
+| Go | ~80ms | 0 | 15MB binary, go-git (pure Go) |
+| Bash | ~155ms | 27-35 | jq + bc + git forks |
+| Python | ~400ms | 5-8 | Interpreter startup dominates |
 
 ## Results directory
 

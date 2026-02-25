@@ -52,10 +52,10 @@ The statusline ships with multiple engine implementations. The installer auto-de
 
 | Engine | Status | Subprocesses | Render time | Requirements |
 |--------|--------|-------------|-------------|--------------|
-| **Rust** | Stable | 0 | ~22ms | rustc 1.70+ (3MB binary) |
-| **Go** | Stable | 0 (hot path) | ~113ms | go 1.23+ (15MB binary) |
-| **Python** | Stable | 5-8 (git only) | ~470ms | python3 (stdlib only) |
-| **Bash** | Stable | 27-35 (jq+bc+git) | 30-100ms | jq, bc, git |
+| **Rust** | Stable | 0 | ~6ms | rustc 1.70+ (3MB binary) |
+| **Go** | Stable | 0 (hot path) | ~80ms | go 1.23+ (15MB binary) |
+| **Python** | Stable | 5-8 (git only) | ~400ms | python3 (stdlib only) |
+| **Bash** | Stable | 27-35 (jq+bc+git) | ~155ms | jq, bc, git |
 
 All engines produce **identical output** for the same input. The engine-agnostic test suite verifies this.
 
@@ -182,7 +182,7 @@ stdin JSON ──> statusline.sh ──> 2 formatted lines (stdout)
                         └── cumulative-stats.sh → update cost caches
 ```
 
-- Render: ~22ms (Rust) / ~113ms (Go) / ~470ms (Python) / ~30-100ms (Bash)
+- Render: ~6ms (Rust) / ~80ms (Go) / ~155ms (Bash) / ~400ms (Python)
 - Background model parse: ~50-100ms
 - Background cost scan: ~2-14s (depends on transcript volume, cached 5min)
 

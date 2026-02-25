@@ -53,16 +53,12 @@ pub fn get(cwd: &str) -> Option<GitState> {
 
 fn check_dirty(repo: &gix::Repository) -> bool {
     // Use gix status platform for a proper dirty check
-    let status = match repo
-        .status(gix::progress::Discard)
-    {
+    let status = match repo.status(gix::progress::Discard) {
         Ok(s) => s,
         Err(_) => return false,
     };
 
-    let iter = match status
-        .into_index_worktree_iter(None)
-    {
+    let iter = match status.into_index_worktree_iter(None) {
         Ok(iter) => iter,
         Err(_) => return false,
     };
@@ -99,9 +95,7 @@ fn get_ahead_behind(
     };
 
     // Convert merge ref (refs/heads/main) to remote tracking ref (refs/remotes/origin/main)
-    let short_name = merge_ref
-        .strip_prefix("refs/heads/")
-        .unwrap_or(&merge_ref);
+    let short_name = merge_ref.strip_prefix("refs/heads/").unwrap_or(&merge_ref);
     let upstream_ref = format!("refs/remotes/{}/{}", remote, short_name);
 
     let upstream_id = match repo.find_reference(&upstream_ref) {

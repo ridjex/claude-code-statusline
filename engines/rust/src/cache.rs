@@ -10,7 +10,9 @@ pub fn cache_dir() -> PathBuf {
         PathBuf::from(xdg).join("claude-code-statusline")
     } else {
         let home = env::var("HOME").unwrap_or_default();
-        PathBuf::from(home).join(".cache").join("claude-code-statusline")
+        PathBuf::from(home)
+            .join(".cache")
+            .join("claude-code-statusline")
     }
 }
 

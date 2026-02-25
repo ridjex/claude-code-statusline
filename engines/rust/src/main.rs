@@ -45,9 +45,7 @@ fn main() {
                 .file_name()
                 .map(|f| f.to_string_lossy().to_string())
                 .unwrap_or_default();
-            base.strip_suffix(".jsonl")
-                .unwrap_or(&base)
-                .to_string()
+            base.strip_suffix(".jsonl").unwrap_or(&base).to_string()
         } else {
             String::new()
         };

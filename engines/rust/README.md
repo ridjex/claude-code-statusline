@@ -8,12 +8,12 @@ The fastest engine — pure Rust with gix (gitoxide) for native git operations.
 
 | Metric | Value |
 |--------|-------|
-| Render (no git) | ~13ms |
-| Render (with git) | ~22ms |
+| Render (with git) | ~6.5ms |
+| Render (no git) | ~6.5ms |
 | Binary size | ~3MB (stripped, LTO) |
 | Subprocesses | 0 (hot path) |
 
-5x faster than Go engine on git operations thanks to gix's efficient index-worktree diff.
+12x faster than Go engine (~80ms). Git operations add negligible overhead thanks to gix's efficient index-worktree diff.
 
 ## Architecture
 

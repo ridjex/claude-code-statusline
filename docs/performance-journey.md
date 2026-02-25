@@ -143,16 +143,16 @@ The Rust engine uses gix (gitoxide) for pure Rust git operations — significant
 - serde for JSON parsing (single `from_slice`)
 - gix for native git (zero subprocess, index-worktree diff for dirty check)
 - No clap, no regex, no tokio — minimal dependency tree
-- Measured: **~22ms with git** (13ms without), **5x faster than Go with git**
+- Measured (hyperfine, 100+ runs): **~6.5ms with git**, **12x faster than Go**
 
 ### Results
 
 | Metric | Go | Rust | Improvement |
 |--------|------|------|-------------|
-| Render (no git) | ~18ms | ~13ms | 28% faster |
-| Render (with git) | ~113ms | ~22ms | 5.1x faster |
+| Render (no git) | ~6ms | ~6.5ms | Comparable (startup-bound) |
+| Render (with git) | ~80ms | ~6.5ms | 12x faster |
 | Binary size | ~15MB | ~3MB | 5x smaller |
-| Git library | go-git (pure Go) | gix (pure Rust) | Much faster dirty check |
+| Git library | go-git (pure Go) | gix (pure Rust) | Nearly zero git overhead |
 | Dependencies | go-git pulls crypto/ssh | gix minimal features | Smaller tree |
 
 The Rust engine produces **byte-identical output** to all other engines. Verified by the engine-agnostic test suite (76 assertions).
@@ -166,12 +166,16 @@ The Rust engine produces **byte-identical output** to all other engines. Verifie
 
 ## Chapter 6: Performance Summary
 
+Measured with [hyperfine](https://github.com/sharkdp/hyperfine) (100+ runs, 10 warmup):
+
 | Engine | Subprocesses | Render (no git) | Render (with git) | Binary size |
 |--------|:----------:|:---------:|:---------:|:--------:|
-| Bash | 27-35 | — | 30-100ms | — |
-| Python | 5-8 | — | ~470ms | — |
-| Go | 0 | ~18ms | ~113ms | ~15MB |
-| **Rust** | **0** | **~13ms** | **~22ms** | **~3MB** |
+| Bash | 27-35 | ~97ms | ~155ms | — |
+| Python | 5-8 | ~400ms | — | — |
+| Go | 0 | ~6ms | ~80ms | ~15MB |
+| **Rust** | **0** | **~6.5ms** | **~6.5ms** | **~3MB** |
+
+Key insight: gix adds near-zero overhead for git operations. go-git adds ~74ms per render.
 
 ## Chapter 7: Benchmark Methodology
 

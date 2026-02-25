@@ -56,23 +56,6 @@ jobs:
       - name: Run engine-agnostic tests (Python)
         run: ./tests/test-engine.sh "python3 engines/python/statusline.py"
 
-  build-go:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.26'
-          cache-dependency-path: engines/go/go.sum
-
-      - name: Build Go binary
-        run: cd engines/go && go build -o statusline ./cmd/statusline
-
   test-go-unit:
     strategy:
       matrix:
@@ -118,29 +101,6 @@ jobs:
       - name: Run engine-agnostic tests (Go)
         run: ./tests/test-engine.sh "engines/go/statusline"
 
-  build-rust:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            engines/rust/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('engines/rust/Cargo.lock') }}
-
-      - name: Build Rust binary
-        run: cd engines/rust && cargo build --release
-
   test-rust-integration:
     strategy:
       matrix:
@@ -175,6 +135,45 @@ jobs:
       - name: Run engine-agnostic tests (Rust)
         run: ./tests/test-engine.sh "engines/rust/target/release/statusline"
 
+  output-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y jq bc
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache-dependency-path: engines/go/go.sum
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            engines/rust/target
+          key: parity-cargo-${{ hashFiles('engines/rust/Cargo.lock') }}
+
+      - name: Build engines
+        run: |
+          cd engines/go && go build -o statusline ./cmd/statusline && cd ../..
+          cd engines/rust && cargo build --release && cd ../..
+
+      - name: Verify output parity across all engines
+        run: ./tests/test-parity.sh
+
   lint-go:
     runs-on: ubuntu-latest
     steps:
@@ -191,6 +190,54 @@ jobs:
         with:
           version: latest
           working-directory: engines/go
+
+  lint-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            engines/rust/target
+          key: lint-cargo-${{ hashFiles('engines/rust/Cargo.lock') }}
+
+      - name: Check formatting
+        run: cd engines/rust && cargo fmt -- --check
+
+      - name: Run clippy
+        run: cd engines/rust && cargo clippy --release -- -D warnings
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Lint all scripts (advisory)
+        run: |
+          shellcheck -S warning \
+            engines/bash/statusline.sh \
+            engines/bash/cumulative-stats.sh \
+            install.sh \
+            install-remote.sh \
+            tests/run-tests.sh \
+            tests/test-engine.sh \
+            tests/test-parity.sh \
+            scripts/generate-demo.sh \
+            benchmarks/bench.sh \
+            benchmarks/profile-bash.sh \
+            || true
 
   demo-update:
     if: github.event_name == 'pull_request'
@@ -238,24 +285,3 @@ jobs:
 
       - name: Verify SVGs are up to date
         run: git diff --exit-code assets/
-
-  shellcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Install ShellCheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
-
-      - name: Lint all scripts (advisory)
-        run: |
-          shellcheck -S warning \
-            engines/bash/statusline.sh \
-            engines/bash/cumulative-stats.sh \
-            install.sh \
-            tests/run-tests.sh \
-            tests/test-engine.sh \
-            scripts/generate-demo.sh \
-            benchmarks/bench.sh \
-            benchmarks/profile-bash.sh \
-            || true

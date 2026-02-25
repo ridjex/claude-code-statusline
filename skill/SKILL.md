@@ -9,7 +9,7 @@ metadata:
 
 Multi-engine status bar for Claude Code. Ships with Rust, Go, Python, and Bash engines.
 The installer auto-detects the best available engine (rust > go > python > bash).
-Rust engine: ~22ms with git, 3MB binary. Go engine: ~113ms, 15MB binary.
+Rust engine: ~6ms render, 3MB binary. Go engine: ~80ms, 15MB binary.
 
 ## Quick Reference
 
