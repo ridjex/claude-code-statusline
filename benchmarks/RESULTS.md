@@ -12,17 +12,17 @@ Pure rendering speed — JSON parsing, formatting, ANSI output. Git and cumulati
 
 | Engine | Mean | σ | Min | Max | |
 |--------|-----:|--:|----:|----:|---|
-| **bash** | 59.2ms | ±1.0ms | 57.4ms | 61.7ms | `████████████████████████████` |
-| **python** | 63.2ms | ±2.9ms | 60.9ms | 82.1ms | `██████████████████████████████` |
-| **go** | 7.0ms | ±0.6ms | 5.1ms | 9.8ms | `███` |
-| **rust** | 1.2ms | ±0.2ms | 1.1ms | 4.5ms | `█` |
+| **bash** | 58.2ms | ±0.8ms | 57.0ms | 61.0ms | `████████████████████████████` |
+| **python** | 62.3ms | ±2.2ms | 60.9ms | 72.0ms | `██████████████████████████████` |
+| **go** | 6.9ms | ±0.8ms | 4.7ms | 12.3ms | `███` |
+| **rust** | 1.2ms | ±0.1ms | 1.1ms | 1.9ms | `█` |
 
 <details>
 <summary>Relative speed</summary>
 
-- **bash**: 48.7x slower
-- **python**: 51.9x slower
-- **go**: 5.7x slower
+- **bash**: 49.1x slower
+- **python**: 52.4x slower
+- **go**: 5.8x slower
 - **rust**: baseline (fastest)
 
 </details>
@@ -33,10 +33,10 @@ Full render including git branch, dirty check, ahead/behind, stash count. Cumula
 
 | Engine | Mean | σ | Min | Max | |
 |--------|-----:|--:|----:|----:|---|
-| **bash** | 77.8ms | ±1.4ms | 75.7ms | 80.5ms | `██████████████████████████████` |
-| **python** | 75.4ms | ±2.5ms | 73.2ms | 90.8ms | `█████████████████████████████` |
-| **go** | 30.3ms | ±0.8ms | 29.0ms | 33.0ms | `████████████` |
-| **rust** | 3.3ms | ±0.1ms | 3.2ms | 4.0ms | `█` |
+| **bash** | 77.7ms | ±0.8ms | 75.7ms | 79.5ms | `██████████████████████████████` |
+| **python** | 76.9ms | ±0.8ms | 74.7ms | 78.8ms | `██████████████████████████████` |
+| **go** | 30.3ms | ±1.3ms | 28.4ms | 36.2ms | `████████████` |
+| **rust** | 3.3ms | ±0.1ms | 3.2ms | 4.1ms | `█` |
 
 ### Git Overhead
 
@@ -44,9 +44,9 @@ Delta between render-only and with-git benchmarks. Shows the cost of git operati
 
 | Engine | Render | With Git | Git Cost | Library |
 |--------|-------:|---------:|---------:|---------|
-| **bash** | 59.2ms | 77.8ms | +18.6ms | git CLI (7 subprocesses) |
-| **python** | 63.2ms | 75.4ms | +12.3ms | git CLI (5-8 subprocesses) |
-| **go** | 7.0ms | 30.3ms | +23.4ms | go-git (pure Go) |
+| **bash** | 58.2ms | 77.7ms | +19.5ms | git CLI (7 subprocesses) |
+| **python** | 62.3ms | 76.9ms | +14.6ms | git CLI (5-8 subprocesses) |
+| **go** | 6.9ms | 30.3ms | +23.4ms | go-git (pure Go) |
 | **rust** | 1.2ms | 3.3ms | +2.1ms | gix (pure Rust) |
 
 ## Key Takeaways
